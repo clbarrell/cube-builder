@@ -50,20 +50,58 @@ React
   
 
   ## Project Structure
-
 ```
-src/
-├── components/           # Reusable UI and 3D components
-│   ├── controls/         # Camera and player controls
-│   ├── environment/      # Environment elements (floor, lighting, etc.)
-│   ├── objects/          # Basic 3D objects and shapes
-│   └── UI/               # User interface components
-├── game/                 # Game-specific logic
-│   ├── entities/         # Game entities (players, enemies, items)
-│   ├── systems/          # Game systems (physics, collision, etc.)
-│   └── state/            # Game state management
-├── hooks/                # Custom React hooks
-├── scenes/               # Scene compositions
-├── utils/                # Utility functions
-└── assets/               # Static assets (textures, models, sounds)
+/Users/chrisbarrell/Code/cube-builder
+├── README.md
+├── eslint.config.js
+├── index.html
+├── package.json
+├── pnpm-lock.yaml
+├── public
+|  └── vite.svg
+├── src
+|  ├── App.css
+|  ├── App.tsx
+|  ├── assets
+|  |  ├── models
+|  |  ├── react.svg
+|  |  ├── sounds
+|  |  └── textures
+|  ├── components
+|  |  ├── UI
+|  |  |  ├── ControlsHelp.tsx
+|  |  |  └── Crosshair.tsx
+|  |  ├── controls
+|  |  |  └── FirstPersonControls.tsx
+|  |  ├── environment
+|  |  |  ├── Floor.tsx
+|  |  |  └── Lighting.tsx
+|  |  └── objects
+|  |     ├── BasicShapes.tsx
+|  |     ├── Cube.tsx
+|  |     ├── CubePlacementPreview.tsx
+|  |     └── Cubes.tsx
+|  ├── game
+|  |  ├── entities
+|  |  |  └── Cube.tsx
+|  |  ├── state
+|  |  |  ├── CubeState.ts
+|  |  |  └── GameState.ts
+|  |  └── systems
+|  |     └── CollisionSystem.ts
+|  ├── hooks
+|  |  └── useKeyPress.ts
+|  ├── index.css
+|  ├── main.tsx
+|  ├── postcss.config.js
+|  ├── scenes
+|  |  ├── FirstPersonScene.tsx
+|  |  └── MainScene.tsx
+|  ├── utils
+|  |  └── math.ts
+|  └── vite-env.d.ts
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
 ```

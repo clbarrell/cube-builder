@@ -3,9 +3,9 @@ import React from "react";
 const Lighting: React.FC = () => {
   return (
     <>
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.6} />
       <directionalLight
-        position={[10, 10, 5]}
+        position={[13, 13, 15]}
         intensity={1}
         castShadow
         shadow-mapSize={[2048, 2048]}

@@ -1,0 +1,5 @@
+---
+description: pnpm
+globs: *.*
+---
+Always use pnpm as the package manager.

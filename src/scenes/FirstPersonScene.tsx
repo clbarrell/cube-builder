@@ -6,7 +6,7 @@ import Crosshair from "../components/UI/Crosshair";
 
 const FirstPersonScene: React.FC = () => {
   return (
-    <div>
+    <div className="w-full h-full">
       <Canvas shadows camera={{ fov: 75 }}>
         <MainScene />
       </Canvas>
