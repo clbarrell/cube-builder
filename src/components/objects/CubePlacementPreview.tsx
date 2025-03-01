@@ -69,24 +69,7 @@ const CubePlacementPreview: React.FC = () => {
       // Set the preview mesh to not be in the raycasting layer
       previewMeshRef.current.layers.disable(RAYCAST_LAYER);
     }
-
-    // Configure the raycaster to only use the raycast layer
-    raycaster.layers.set(RAYCAST_LAYER);
-  }, [previewPosition]);
-
-  // Effect to update layers when cubes change
-  useEffect(() => {
-    // Force an update of the raycasting layers when cubes change
-    scene.traverse((object) => {
-      if (
-        object instanceof THREE.Mesh &&
-        object.geometry &&
-        object !== previewMeshRef.current
-      ) {
-        object.layers.enable(RAYCAST_LAYER);
-      }
-    });
-  }, [cubes, scene]);
+  }, []);
 
   // Main update loop
   useFrame(() => {
@@ -101,12 +84,10 @@ const CubePlacementPreview: React.FC = () => {
 
     // Get all meshes in the scene that should be considered for raycasting
     const targetMeshes: THREE.Object3D[] = [];
+
+    // Ensure all objects (except preview) have the raycast layer enabled
     scene.traverse((object) => {
-      if (
-        object instanceof THREE.Mesh &&
-        object.geometry &&
-        object !== previewMeshRef.current
-      ) {
+      if (object instanceof THREE.Mesh && object !== previewMeshRef.current) {
         // Enable the raycast layer for this object
         object.layers.enable(RAYCAST_LAYER);
         targetMeshes.push(object);
@@ -114,7 +95,7 @@ const CubePlacementPreview: React.FC = () => {
     });
 
     // Cast ray and find intersections
-    const intersects = raycaster.intersectObjects(targetMeshes);
+    const intersects = raycaster.intersectObjects(targetMeshes, false);
 
     // Process the closest intersection if within range
     if (
