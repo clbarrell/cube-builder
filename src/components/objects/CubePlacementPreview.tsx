@@ -7,6 +7,7 @@ const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
   const cubes = useCubeStore((state) => state.cubes);
   const addCube = useCubeStore((state) => state.addCube);
+  const hasReachedLimit = useCubeStore((state) => state.hasReachedLimit);
 
   // State for the preview cube
   const [previewPosition, setPreviewPosition] = useState<THREE.Vector3 | null>(
@@ -73,6 +74,13 @@ const CubePlacementPreview: React.FC = () => {
 
   // Main update loop
   useFrame(() => {
+    // If we've reached the cube limit, hide the preview and don't process further
+    if (hasReachedLimit()) {
+      setPreviewPosition(null);
+      setIsValidPlacement(false);
+      return;
+    }
+
     // Throttle updates to reduce flickering
     const now = Date.now();
     if (now - lastUpdateTime.current < updateCooldown) {
@@ -135,17 +143,17 @@ const CubePlacementPreview: React.FC = () => {
   // Handle click to place cube
   useEffect(() => {
     const handleClick = () => {
-      if (previewPosition && isValidPlacement) {
+      if (previewPosition && isValidPlacement && !hasReachedLimit()) {
         addCube(previewPosition);
       }
     };
 
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
-  }, [previewPosition, isValidPlacement, addCube]);
+  }, [previewPosition, isValidPlacement, addCube, hasReachedLimit]);
 
-  // Don't render anything if we don't have a position
-  if (!previewPosition) return null;
+  // Don't render anything if we don't have a position or have reached the limit
+  if (!previewPosition || hasReachedLimit()) return null;
 
   return (
     <>

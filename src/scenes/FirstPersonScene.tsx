@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import MainScene from "./MainScene";
 import ControlsHelp from "../components/UI/ControlsHelp";
 import Crosshair from "../components/UI/Crosshair";
+import CubeCounter from "../components/UI/CubeCounter";
 
 const FirstPersonScene: React.FC = () => {
   return (
@@ -12,6 +13,7 @@ const FirstPersonScene: React.FC = () => {
       </Canvas>
       <ControlsHelp />
       <Crosshair />
+      <CubeCounter />
     </div>
   );
 };
