@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useCubeStore } from "../../game/state/CubeState";
-import CubePositionDebug from "../UI/CubePositionDebug";
-import { Html } from "@react-three/drei";
 
 const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
@@ -75,6 +73,20 @@ const CubePlacementPreview: React.FC = () => {
     // Configure the raycaster to only use the raycast layer
     raycaster.layers.set(RAYCAST_LAYER);
   }, [previewPosition]);
+
+  // Effect to update layers when cubes change
+  useEffect(() => {
+    // Force an update of the raycasting layers when cubes change
+    scene.traverse((object) => {
+      if (
+        object instanceof THREE.Mesh &&
+        object.geometry &&
+        object !== previewMeshRef.current
+      ) {
+        object.layers.enable(RAYCAST_LAYER);
+      }
+    });
+  }, [cubes, scene]);
 
   // Main update loop
   useFrame(() => {
@@ -156,14 +168,6 @@ const CubePlacementPreview: React.FC = () => {
 
   return (
     <>
-      {/* Render the debug UI */}
-      <Html fullscreen>
-        <CubePositionDebug
-          position={previewPosition}
-          isValid={isValidPlacement}
-        />
-      </Html>
-
       {/* Render the preview cube */}
       <mesh
         ref={previewMeshRef}

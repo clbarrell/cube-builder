@@ -70,7 +70,8 @@ React
 |  ├── components
 |  |  ├── UI
 |  |  |  ├── ControlsHelp.tsx
-|  |  |  └── Crosshair.tsx
+|  |  |  ├── Crosshair.tsx
+|  |  |  └── CubePositionDebug.tsx
 |  |  ├── controls
 |  |  |  └── FirstPersonControls.tsx
 |  |  ├── environment
