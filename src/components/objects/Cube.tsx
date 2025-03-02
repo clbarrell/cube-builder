@@ -13,7 +13,7 @@ const Cube: React.FC<CubeProps> = ({ position }) => {
       receiveShadow
     >
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="green" />
+      <meshStandardMaterial attach="material"  color="green" />
     </mesh>
   )
 }
