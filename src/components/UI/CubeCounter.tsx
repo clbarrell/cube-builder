@@ -7,13 +7,16 @@ const CubeCounter: React.FC = () => {
   const hasReachedLimit = useCubeStore((state) => state.hasReachedLimit());
 
   return (
-    <div className="absolute top-0 right-0 bg-black/70 text-white px-4 py-2 rounded-bl-md">
-      <div className="text-lg font-medium">
-        Cubes: {cubes.length} / {maxCubes}
+    <div className="absolute text-right top-0 right-0 bg-black/70 text-white px-4 py-2 rounded-bl-md">
+      <div className="text-sm font-medium flex items-center gap-2">
+        {hasReachedLimit && (
+          <div className="text-red-400">No more cubes left</div>
+        )}
+        <div>🟩</div>
+        <span className={`${hasReachedLimit ? "text-red-400" : "text-white"}`}>
+          {cubes.length} / {maxCubes}
+        </span>
       </div>
-      {hasReachedLimit && (
-        <div className="text-red-400 text-sm">Maximum limit reached!</div>
-      )}
     </div>
   );
 };

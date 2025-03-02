@@ -10,7 +10,7 @@ interface CubeState {
 
 export const useCubeStore = create<CubeState>((set, get) => ({
   cubes: [],
-  maxCubes: 10,
+  maxCubes: 100,
   addCube: (position) =>
     set((state) => {
       // Check if we've reached the maximum number of cubes
