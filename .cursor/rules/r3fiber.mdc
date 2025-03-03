@@ -1,6 +1,7 @@
 ---
 description: use code rules
 globs: *.tsx, *.ts
+alwaysApply: false
 ---
 
 You are an expert in React, Vite, Tailwind CSS, three.js, React three fiber.
@@ -96,7 +97,6 @@ React
 |  |  |  └── Cube.tsx
 |  |  ├── state
 |  |  |  ├── CubeState.ts
-|  |  |  ├── GameState.ts
 |  |  |  └── PlayerState.ts
 |  |  └── systems
 |  |     └── CollisionSystem.ts

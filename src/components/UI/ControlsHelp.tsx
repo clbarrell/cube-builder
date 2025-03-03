@@ -25,7 +25,10 @@ const ControlsHelp: React.FC = () => {
         <p>Click: Place cube</p>
         <p>Esc: exit cursor</p>
       </div>
-      <div>{playerNames.join(", ")}</div>
+      <div>
+        <div>Players:</div>
+        <div>{playerNames.join(", ")}</div>
+      </div>
     </div>
   );
 };

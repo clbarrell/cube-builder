@@ -10,7 +10,7 @@ const PlayerPositionSync: React.FC = () => {
 
   // Throttling for position updates
   const lastPositionUpdate = useRef(0);
-  const positionUpdateInterval = 100; // ms between position updates
+  const positionUpdateInterval = 15; // ms between position updates
 
   // Store last sent position to avoid unnecessary updates
   const lastPosition = useRef(new Vector3());

@@ -32,15 +32,15 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-white mb-4">
-          Welcome to Cube Builder
+          Welcome to Cube World
         </h2>
         <p className="text-gray-300 mb-6">
-          Enter your name to join the multiplayer game
+          Enter your name to begin
         </p>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="playerName" className="block text-gray-300 mb-2">
+            <label htmlFor="playerName" className="sr-only text-gray-300 mb-2">
               Your Name
             </label>
             <input
@@ -59,7 +59,7 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
           <button
             type="submit"
             disabled={!name.trim()}
-            className={`w-full py-2 px-4 rounded font-medium ${
+            className={`w-full py-2 px-4 rounded font-medium flex items-center justify-center gap-4 ${
               name.trim()
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
                 : "bg-gray-600 text-gray-400 cursor-not-allowed"
