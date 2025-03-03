@@ -53,12 +53,15 @@ React
 ```
 /Users/chrisbarrell/Code/cube-builder
 ├── README.md
+├── docs
+|  └── multiplayer.md
 ├── eslint.config.js
 ├── index.html
 ├── package.json
 ├── pnpm-lock.yaml
 ├── public
 |  └── vite.svg
+├── server.ts
 ├── src
 |  ├── App.css
 |  ├── App.tsx
@@ -68,10 +71,14 @@ React
 |  |  ├── sounds
 |  |  └── textures
 |  ├── components
+|  |  ├── ErrorBoundary.tsx
 |  |  ├── UI
 |  |  |  ├── ControlsHelp.tsx
 |  |  |  ├── Crosshair.tsx
-|  |  |  └── CubePositionDebug.tsx
+|  |  |  ├── CubeCounter.tsx
+|  |  |  ├── CubePositionDebug.tsx
+|  |  |  ├── PlayerCounter.tsx
+|  |  |  └── PlayerNameInput.tsx
 |  |  ├── controls
 |  |  |  └── FirstPersonControls.tsx
 |  |  ├── environment
@@ -81,13 +88,16 @@ React
 |  |     ├── BasicShapes.tsx
 |  |     ├── Cube.tsx
 |  |     ├── CubePlacementPreview.tsx
-|  |     └── Cubes.tsx
+|  |     ├── Cubes.tsx
+|  |     ├── PlayerPositionSync.tsx
+|  |     └── PlayerVisualization.tsx
 |  ├── game
 |  |  ├── entities
 |  |  |  └── Cube.tsx
 |  |  ├── state
 |  |  |  ├── CubeState.ts
-|  |  |  └── GameState.ts
+|  |  |  ├── GameState.ts
+|  |  |  └── PlayerState.ts
 |  |  └── systems
 |  |     └── CollisionSystem.ts
 |  ├── hooks
@@ -98,6 +108,8 @@ React
 |  ├── scenes
 |  |  ├── FirstPersonScene.tsx
 |  |  └── MainScene.tsx
+|  ├── services
+|  |  └── socketService.ts
 |  ├── utils
 |  |  └── math.ts
 |  └── vite-env.d.ts

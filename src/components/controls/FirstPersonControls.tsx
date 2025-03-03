@@ -173,6 +173,7 @@ const FirstPersonControls: React.FC = () => {
     return false;
   };
 
+  // Main update loop
   useFrame(() => {
     // Check if we're currently stuck inside a cube
     if (checkCubeCollision(camera.position)) {

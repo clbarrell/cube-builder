@@ -1,6 +1,6 @@
 # Cube Builder
 
-A 3D scene/game built with React Three Fiber.
+This is a multiplayer game built with React Three Fiber. Where each player can add a limited number of cubes to the scene.
 
 ## Project Structure
 
@@ -39,16 +39,47 @@ src/
 1. Install dependencies:
 
    ```
-   npm install
+   pnpm install
    ```
 
-2. Start the development server:
+2. Create a `.env` file based on `.env.example`:
 
    ```
-   npm run dev
+   cp .env.example .env
    ```
 
-3. Build for production:
+3. Start the development server and Socket.io server together:
+
    ```
-   npm run build
+   pnpm dev:all
    ```
+
+   Or run them separately:
+
+   ```
+   # Terminal 1 - Client
+   pnpm dev
+
+   # Terminal 2 - Server
+   pnpm server
+   ```
+
+4. Build for production:
+
+   ```
+   pnpm build
+   pnpm build:server
+   ```
+
+5. Start the production server:
+   ```
+   pnpm start
+   ```
+
+## Multiplayer Features
+
+- Each player can add a limited number of cubes to the scene
+- Players can see each other's positions in real-time
+- Players can only remove cubes they placed (cmd+click or right-click)
+- Player names are displayed above their avatars
+- A counter shows the number of connected players

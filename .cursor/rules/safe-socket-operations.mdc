@@ -1,0 +1,32 @@
+---
+description: Socket.io best practices for robust, error-resistant connections
+globs: src/services/*.ts, src/**/*socket*.ts
+---
+
+# Socket.io Connection Safety Rules
+
+## Connection Verification
+- Always check if a socket is connected before using it
+- Use null checks AND connection state checks for socket operations
+- Never assume a socket initialized = socket connected
+
+## Type Safety
+- Use generic types for socket messages instead of `any`
+- Define explicit interfaces for all socket events
+- Use TypeScript's `Record<string, unknown>` or more specific types for message payloads
+
+## Error Handling
+- Wrap all socket operations (emit, on) in try/catch blocks
+- Use safe wrapper functions for common socket operations
+- Log detailed information about socket errors
+
+## Connection Management
+- Implement reconnection policies with reasonable attempts and delays
+- Handle disconnect events explicitly
+- Provide fallback behavior when socket operations fail
+- Set appropriate timeouts for socket operations
+
+## Example Patterns
+- Use safeEmit pattern: `safeEmit<T extends Record<string, unknown>>(event: string, data: T): void`
+- Implement connection state monitoring
+- Use socket connection status indicators in the UI
