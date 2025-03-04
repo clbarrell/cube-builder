@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { usePlayerStore } from "../../game/state/PlayerState";
+import { useLocalStorage } from "usehooks-ts";
 
 interface PlayerNameInputProps {
   onNameSubmit: (name: string) => void;
 }
 
 const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
-  const [name, setName] = useState("");
+  const [name, setName] = useLocalStorage("name-ls", "");
   const [isVisible, setIsVisible] = useState(true);
   const localPlayerName = usePlayerStore((state) => state.localPlayerName);
 
@@ -34,9 +35,7 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
         <h2 className="text-2xl font-bold text-white mb-4">
           Welcome to Cube World
         </h2>
-        <p className="text-gray-300 mb-6">
-          Enter your name to begin
-        </p>
+        <p className="text-gray-300 mb-6">Enter your name to begin</p>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
