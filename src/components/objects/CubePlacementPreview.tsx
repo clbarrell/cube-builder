@@ -6,7 +6,6 @@ import { usePlayerStore } from "../../game/state/PlayerState";
 
 const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
-  const cubes = useCubeStore((state) => state.cubes);
   const addCube = useCubeStore((state) => state.addCube);
   const removeCube = useCubeStore((state) => state.removeCube);
   const hasReachedLimit = useCubeStore((state) => state.hasReachedLimit);

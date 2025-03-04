@@ -92,7 +92,6 @@ export const getSocket = (): Socket | null => {
     return null;
   }
 
-  console.log("getSocket: Returning connected socket", socket.id);
   return socket;
 };
 
