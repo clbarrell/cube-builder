@@ -27,8 +27,38 @@ const io = new Server(server, {
 // Serve static files in production
 app.use(express.static(path.join(__dirname, "dist")));
 
+// Define types for game state
+interface Player {
+  id: string;
+  name: string;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  rotation: {
+    x: number;
+    y: number;
+  };
+}
+
+interface Cube {
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  playerId: string;
+  playerName: string;
+}
+
+interface GameState {
+  players: Record<string, Player>;
+  cubes: Cube[];
+}
+
 // Game state
-const gameState = {
+const gameState: GameState = {
   players: {},
   cubes: [],
 };
@@ -76,6 +106,110 @@ io.on("connection", (socket) => {
         position,
         rotation,
       });
+    }
+  });
+
+  // Handle cube:add
+  socket.on("cube:add", (data) => {
+    // Check if data is valid
+    if (!data || !data.position || !data.playerId || !data.playerName) {
+      console.error("Invalid cube:add data:", data);
+      return;
+    }
+
+    const { position, playerId, playerName } = data;
+    console.log("cube:add", position, playerId, playerName);
+
+    // Validate that the player is the one making the request
+    if (playerId !== socket.id) {
+      console.warn(`Player ${socket.id} tried to add a cube for ${playerId}`);
+      return;
+    }
+
+    // Check if a cube already exists at this position
+    const cubeExists = gameState.cubes.some(
+      (cube) =>
+        cube.position.x === position.x &&
+        cube.position.y === position.y &&
+        cube.position.z === position.z
+    );
+
+    if (!cubeExists) {
+      // Add the cube to the game state
+      const newCube = {
+        position,
+        playerId,
+        playerName,
+      };
+
+      gameState.cubes.push(newCube);
+
+      // Broadcast to all other players
+      console.log("Broadcasting cube:add to other players");
+      socket.broadcast.emit("cube:add", newCube);
+
+      console.log(
+        `Player ${playerName} (${playerId}) added a cube at`,
+        position
+      );
+      console.log("Current cube count:", gameState.cubes.length);
+    } else {
+      console.log("Cube already exists at position:", position);
+    }
+  });
+
+  // Handle cube:remove
+  socket.on("cube:remove", (data) => {
+    console.log("Received cube:remove event with data:", data);
+
+    // Check if data is valid
+    if (!data || !data.position || !data.playerId) {
+      console.error("Invalid cube:remove data:", data);
+      return;
+    }
+
+    const { position, playerId } = data;
+
+    // Validate that the player is the one making the request
+    if (playerId !== socket.id) {
+      console.warn(
+        `Player ${socket.id} tried to remove a cube for ${playerId}`
+      );
+      return;
+    }
+
+    // Find the cube at this position
+    const cubeIndex = gameState.cubes.findIndex(
+      (cube) =>
+        cube.position.x === position.x &&
+        cube.position.y === position.y &&
+        cube.position.z === position.z
+    );
+
+    // Check if the cube exists and belongs to the player
+    if (cubeIndex !== -1) {
+      const cube = gameState.cubes[cubeIndex];
+
+      if (cube.playerId === playerId) {
+        // Remove the cube from the game state
+        gameState.cubes.splice(cubeIndex, 1);
+
+        // Broadcast to all other players
+        console.log("Broadcasting cube:remove to other players");
+        socket.broadcast.emit("cube:remove", { position });
+
+        console.log(
+          `Player ${cube.playerName} (${playerId}) removed a cube at`,
+          position
+        );
+        console.log("Current cube count:", gameState.cubes.length);
+      } else {
+        console.warn(
+          `Player ${socket.id} tried to remove a cube that belongs to ${cube.playerId}`
+        );
+      }
+    } else {
+      console.log("No cube found at position:", position);
     }
   });
 

@@ -3,7 +3,7 @@ import { useCubeStore } from "../../game/state/CubeState";
 
 const CubeCounter: React.FC = () => {
   const cubes = useCubeStore((state) => state.cubes);
-  const maxCubes = useCubeStore((state) => state.maxCubes);
+  const maxCubes = useCubeStore((state) => state.maxCubesPerPlayer);
   const hasReachedLimit = useCubeStore((state) => state.hasReachedLimit());
 
   return (

@@ -82,14 +82,17 @@ export const initializeSocket = (): Socket => {
 
 // Get socket instance with connection check
 export const getSocket = (): Socket | null => {
-  if (!socket) return null;
-
-  if (!socket.connected) {
-    // Don't log a warning here - it creates noise in the console
-    // This is a normal condition that will be handled by ensureSocketConnected
+  if (!socket) {
+    console.warn("getSocket: No socket instance exists");
     return null;
   }
 
+  if (!socket.connected) {
+    console.warn("getSocket: Socket exists but is not connected");
+    return null;
+  }
+
+  console.log("getSocket: Returning connected socket", socket.id);
   return socket;
 };
 
@@ -233,6 +236,16 @@ export const onStateSync = (callback: (state: GameState) => void): void => {
   safeOn("state:sync", callback);
 };
 
+export const onCubeAdd = (callback: (cube: Cube) => void): void => {
+  safeOn("cube:add", callback);
+};
+
+export const onCubeRemove = (
+  callback: (data: { position: { x: number; y: number; z: number } }) => void
+): void => {
+  safeOn("cube:remove", callback);
+};
+
 // Clean up event listeners
 export const offAllEvents = (): void => {
   if (socket) {
@@ -240,6 +253,8 @@ export const offAllEvents = (): void => {
     socket.off("player:leave");
     socket.off("player:move");
     socket.off("state:sync");
+    socket.off("cube:add");
+    socket.off("cube:remove");
   }
 };
 
@@ -249,7 +264,11 @@ export const safeEmit = <T extends Record<string, unknown>>(
   data: T
 ): void => {
   const socketInstance = getSocket();
-  if (!socketInstance) return;
+
+  if (!socketInstance) {
+    console.error(`Cannot emit ${event}: Socket not connected`);
+    return;
+  }
 
   try {
     socketInstance.emit(event, data);

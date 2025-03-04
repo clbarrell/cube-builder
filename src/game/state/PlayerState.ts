@@ -12,6 +12,7 @@ import {
   disconnect,
   ensureSocketConnected,
 } from "../../services/socketService";
+import { initializeCubeSocketListeners } from "./CubeState";
 
 interface PlayerState {
   // Player data
@@ -133,6 +134,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
             set({ localPlayerId: socket.id });
           }
         });
+
+        // Initialize cube socket listeners
+        initializeCubeSocketListeners();
 
         // Mark as initialized only after successful connection and handler registration
         set({ isInitialized: true });

@@ -83,3 +83,7 @@ src/
 - Players can only remove cubes they placed (cmd+click or right-click)
 - Player names are displayed above their avatars
 - A counter shows the number of connected players
+
+
+TODO
+- Something that let's me enter some commands to control the server. like "reset clock" and stuff.

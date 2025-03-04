@@ -113,9 +113,18 @@ const FirstPersonControls: React.FC = () => {
       // Simple box-sphere collision detection
       // Calculate the closest point on the cube to the player position
       const closestPoint = new THREE.Vector3(
-        Math.max(cube.x - 0.5, Math.min(position.x, cube.x + 0.5)),
-        Math.max(cube.y - 0.5, Math.min(position.y, cube.y + 0.5)),
-        Math.max(cube.z - 0.5, Math.min(position.z, cube.z + 0.5))
+        Math.max(
+          cube.position.x - 0.5,
+          Math.min(position.x, cube.position.x + 0.5)
+        ),
+        Math.max(
+          cube.position.y - 0.5,
+          Math.min(position.y, cube.position.y + 0.5)
+        ),
+        Math.max(
+          cube.position.z - 0.5,
+          Math.min(position.z, cube.position.z + 0.5)
+        )
       );
 
       // Calculate distance from closest point to player position

@@ -2,12 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useCubeStore } from "../../game/state/CubeState";
+import { usePlayerStore } from "../../game/state/PlayerState";
 
 const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
   const cubes = useCubeStore((state) => state.cubes);
   const addCube = useCubeStore((state) => state.addCube);
+  const removeCube = useCubeStore((state) => state.removeCube);
   const hasReachedLimit = useCubeStore((state) => state.hasReachedLimit);
+  const getCubeAtPosition = useCubeStore((state) => state.getCubeAtPosition);
+  const localPlayerId = usePlayerStore((state) => state.localPlayerId);
 
   // State for the preview cube
   const [previewPosition, setPreviewPosition] = useState<THREE.Vector3 | null>(
@@ -50,9 +54,7 @@ const CubePlacementPreview: React.FC = () => {
     if (!pos) return false;
 
     // Check if position is already occupied by another cube
-    return !cubes.some(
-      (cube) => cube.x === pos.x && cube.y === pos.y && cube.z === pos.z
-    );
+    return !getCubeAtPosition(pos);
   };
 
   // Helper function to adjust position for floor placement
@@ -140,17 +142,49 @@ const CubePlacementPreview: React.FC = () => {
     }
   });
 
-  // Handle click to place cube
+  // Handle click to place or remove cube
   useEffect(() => {
-    const handleClick = () => {
-      if (previewPosition && isValidPlacement && !hasReachedLimit()) {
+    const handleClick = (e: MouseEvent) => {
+      // Check if we should remove a cube (right-click or cmd+click)
+      const isRemoveAction = e.button === 2 || (e.button === 0 && e.metaKey);
+
+      if (isRemoveAction) {
+        // If we have a preview position, try to remove a cube at that position
+        if (previewPosition) {
+          const cubeAtPosition = getCubeAtPosition(previewPosition);
+
+          // Only allow removal if the cube belongs to the local player
+          if (cubeAtPosition && cubeAtPosition.playerId === localPlayerId) {
+            removeCube(previewPosition);
+          }
+        }
+      } else if (previewPosition && isValidPlacement && !hasReachedLimit()) {
+        // Normal left-click to place a cube
         addCube(previewPosition);
       }
     };
 
+    // Prevent context menu on right-click
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
     window.addEventListener("click", handleClick);
-    return () => window.removeEventListener("click", handleClick);
-  }, [previewPosition, isValidPlacement, addCube, hasReachedLimit]);
+    window.addEventListener("contextmenu", handleContextMenu);
+
+    return () => {
+      window.removeEventListener("click", handleClick);
+      window.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, [
+    previewPosition,
+    isValidPlacement,
+    addCube,
+    removeCube,
+    hasReachedLimit,
+    getCubeAtPosition,
+    localPlayerId,
+  ]);
 
   // Don't render anything if we don't have a position or have reached the limit
   if (!previewPosition || hasReachedLimit()) return null;
