@@ -118,7 +118,6 @@ io.on("connection", (socket) => {
     }
 
     const { position, playerId, playerName } = data;
-    console.log("cube:add", position, playerId, playerName);
 
     // Validate that the player is the one making the request
     if (playerId !== socket.id) {
@@ -145,14 +144,14 @@ io.on("connection", (socket) => {
       gameState.cubes.push(newCube);
 
       // Broadcast to all other players
-      console.log("Broadcasting cube:add to other players");
       socket.broadcast.emit("cube:add", newCube);
 
       console.log(
         `Player ${playerName} (${playerId}) added a cube at`,
-        position
+        position,
+        "total:",
+        gameState.cubes.length
       );
-      console.log("Current cube count:", gameState.cubes.length);
     } else {
       console.log("Cube already exists at position:", position);
     }
@@ -236,4 +235,7 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(
+    `Connect from other devices using your local network IP address and port ${PORT}`
+  );
 });

@@ -19,9 +19,9 @@ const CubePositionDebug: React.FC<CubePositionDebugProps> = ({
       <div>Y: {position.y.toFixed(2)}</div>
       <div>Z: {position.z.toFixed(2)}</div>
       <div className="mt-1">
-        Status:
+        Cursor:
         <span className={isValid ? "text-green-400 ml-2" : "text-red-400 ml-2"}>
-          {isValid ? "Valid" : "Invalid"}
+          {/* put the placement of where the camera is pointed */}
         </span>
       </div>
     </div>

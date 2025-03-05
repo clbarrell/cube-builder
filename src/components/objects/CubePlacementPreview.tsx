@@ -3,6 +3,8 @@ import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useCubeStore } from "../../game/state/CubeState";
 import { usePlayerStore } from "../../game/state/PlayerState";
+import { useKeyPress } from "../../hooks/useKeyPress";
+import { useDebugStore } from "../../game/state/DebugState";
 
 const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
@@ -11,6 +13,18 @@ const CubePlacementPreview: React.FC = () => {
   const hasReachedLimit = useCubeStore((state) => state.hasReachedLimit);
   const getCubeAtPosition = useCubeStore((state) => state.getCubeAtPosition);
   const localPlayerId = usePlayerStore((state) => state.localPlayerId);
+  const debugModeEnabled = useDebugStore((state) => state.debugModeEnabled);
+
+  // Track command key press for removal mode
+  const isMetaLeftPressed = useKeyPress("MetaLeft");
+  const isMetaRightPressed = useKeyPress("MetaRight");
+  const isCommandPressed = isMetaLeftPressed || isMetaRightPressed;
+
+  // State for right-click mode (alternative to command key)
+  const [isRightClickMode, setIsRightClickMode] = useState(false);
+
+  // Combined removal mode state
+  const isRemovalMode = isCommandPressed || isRightClickMode;
 
   // State for the preview cube
   const [previewPosition, setPreviewPosition] = useState<THREE.Vector3 | null>(
@@ -18,14 +32,30 @@ const CubePlacementPreview: React.FC = () => {
   );
   const [isValidPlacement, setIsValidPlacement] = useState(false);
 
+  // State for tracking if we're hovering over a removable cube
+  const [hoverRemovableCube, setHoverRemovableCube] =
+    useState<THREE.Vector3 | null>(null);
+
+  // New state for tracking cursor position (where the ray hits)
+  const [cursorPosition, setCursorPosition] = useState<THREE.Vector3 | null>(
+    null
+  );
+
+  // New state for tracking placement position (before grid adjustment)
+  const [placementPosition, setPlacementPosition] =
+    useState<THREE.Vector3 | null>(null);
+
   // Reference to the preview mesh
   const previewMeshRef = useRef<THREE.Mesh>(null);
+
+  // Reference to the removal indicator mesh
+  const removalIndicatorRef = useRef<THREE.Mesh>(null);
 
   // Throttling state
   const lastUpdateTime = useRef(0);
   const updateCooldown = 150; // ms between updates
 
-  // Maximum distance for cube placement
+  // Maximum distance for cube placement/removal
   const MAX_PLACEMENT_DISTANCE = 5;
 
   // Create raycaster once
@@ -35,9 +65,13 @@ const CubePlacementPreview: React.FC = () => {
   // Create a layer for raycasting (to exclude preview objects)
   const RAYCAST_LAYER = 1;
 
+  // Add this to get the update function from the debug store
+  const updateCursorDebug = useDebugStore((state) => state.updateCursorDebug);
+
   // Helper function to snap to grid with 0.5 offset (0.5, 1.5, 2.5, etc.)
   const snapToGrid = (pos: THREE.Vector3): THREE.Vector3 => {
     // Round to nearest whole number and add 0.5
+    // z of 3.6 should go to 3.5
     const snapX = Math.floor(pos.x) + 0.5;
     const snapZ = Math.floor(pos.z) + 0.5;
 
@@ -60,8 +94,28 @@ const CubePlacementPreview: React.FC = () => {
   const adjustPositionForFloor = (pos: THREE.Vector3): THREE.Vector3 => {
     // Create a position that's properly on the grid
     const adjustedPos = snapToGrid(pos);
+    // console.log("Got this for floor: ", adjustedPos);
 
     return adjustedPos;
+  };
+
+  // Helper function to check if a cube at position is removable by local player
+  const isRemovableCube = (pos: THREE.Vector3): boolean => {
+    if (!pos) return false;
+
+    const cube = getCubeAtPosition(pos);
+    const isRemovable = !!cube && cube.playerId === localPlayerId;
+
+    if (cube && !isRemovable) {
+      console.log(
+        "Cube found but not removable. Owner:",
+        cube.playerId,
+        "Local:",
+        localPlayerId
+      );
+    }
+
+    return isRemovable;
   };
 
   // Set up the raycaster to ignore the preview mesh
@@ -71,17 +125,30 @@ const CubePlacementPreview: React.FC = () => {
       // Set the preview mesh to not be in the raycasting layer
       previewMeshRef.current.layers.disable(RAYCAST_LAYER);
     }
+
+    // Also exclude the removal indicator from raycasting
+    if (removalIndicatorRef.current) {
+      removalIndicatorRef.current.layers.disable(RAYCAST_LAYER);
+    }
   }, []);
+
+  // Update cursor style based on mode
+  useEffect(() => {
+    if (isRemovalMode) {
+      document.body.style.cursor = hoverRemovableCube
+        ? "pointer"
+        : "not-allowed";
+    } else {
+      document.body.style.cursor = "default";
+    }
+
+    return () => {
+      document.body.style.cursor = "default";
+    };
+  }, [isRemovalMode, hoverRemovableCube, isCommandPressed, isRightClickMode]);
 
   // Main update loop
   useFrame(() => {
-    // If we've reached the cube limit, hide the preview and don't process further
-    if (hasReachedLimit()) {
-      setPreviewPosition(null);
-      setIsValidPlacement(false);
-      return;
-    }
-
     // Throttle updates to reduce flickering
     const now = Date.now();
     if (now - lastUpdateTime.current < updateCooldown) {
@@ -96,7 +163,11 @@ const CubePlacementPreview: React.FC = () => {
 
     // Ensure all objects (except preview) have the raycast layer enabled
     scene.traverse((object) => {
-      if (object instanceof THREE.Mesh && object !== previewMeshRef.current) {
+      if (
+        object instanceof THREE.Mesh &&
+        object !== previewMeshRef.current &&
+        object !== removalIndicatorRef.current
+      ) {
         // Enable the raycast layer for this object
         object.layers.enable(RAYCAST_LAYER);
         targetMeshes.push(object);
@@ -115,93 +186,211 @@ const CubePlacementPreview: React.FC = () => {
 
       // Only proceed if we have a face normal
       if (intersection.face && intersection.face.normal) {
+        // Get the position of the intersected object
+        const intersectedObject = intersection.object;
+        const intersectedPosition = new THREE.Vector3().setFromMatrixPosition(
+          intersectedObject.matrixWorld
+        );
+
+        // Try to find a cube at the intersected position
+        const cubeAtIntersection = getCubeAtPosition(
+          snapToGrid(intersectedPosition)
+        );
+
         // Calculate position for the new cube
         const point = intersection.point.clone();
         const normal = intersection.face.normal.clone();
 
+        // Store the cursor position (where the ray hits)
+        setCursorPosition(point.clone());
+
         // Move slightly away from the surface in the direction of the normal
-        const placementPosition = point.add(normal.multiplyScalar(0.5));
+        const newPlacementPosition =
+          point.y < 0.5 ? point : point.add(normal.multiplyScalar(0.5));
+
+        // Store the placement position
+        setPlacementPosition(newPlacementPosition.clone());
 
         // Adjust position for floor placement and snap to grid
-        const adjustedPosition = adjustPositionForFloor(placementPosition);
+        const adjustedPosition = adjustPositionForFloor(point);
 
-        // Check if this position is valid
-        const valid = isValidPosition(adjustedPosition);
+        if (isRemovalMode) {
+          // In removal mode, first check if we're directly clicking on a cube
+          if (
+            cubeAtIntersection &&
+            cubeAtIntersection.playerId === localPlayerId
+          ) {
+            // We're hovering over a removable cube
+            const cubePosition = new THREE.Vector3(
+              cubeAtIntersection.position.x,
+              cubeAtIntersection.position.y,
+              cubeAtIntersection.position.z
+            );
+            setHoverRemovableCube(cubePosition);
+          } else {
+            // Check if there's a removable cube at the adjusted position
+            const canRemove = isRemovableCube(adjustedPosition);
+            setHoverRemovableCube(canRemove ? adjustedPosition : null);
+          }
 
-        // Update the preview position and validity
-        setPreviewPosition(adjustedPosition);
-        setIsValidPlacement(valid);
+          // Hide the placement preview in removal mode
+          setPreviewPosition(null);
+          setIsValidPlacement(false);
+        } else {
+          // In placement mode, check if this position is valid
+          const valid = isValidPosition(adjustedPosition);
+
+          // Update the preview position and validity
+          setPreviewPosition(adjustedPosition);
+          setIsValidPlacement(valid);
+
+          // Clear removal hover state
+          setHoverRemovableCube(null);
+        }
+
+        if (debugModeEnabled) {
+          updateCursorDebug({
+            cursorPosition,
+            previewPosition,
+            placementPosition,
+            isValidPlacement,
+            isRemovalMode,
+            hoverRemovableCube,
+          });
+        }
+
         lastUpdateTime.current = now;
       }
     } else {
-      // No valid intersection, hide the preview
+      // No valid intersection, hide both previews
+      setCursorPosition(null);
       setPreviewPosition(null);
+      setPlacementPosition(null);
       setIsValidPlacement(false);
+      setHoverRemovableCube(null);
       lastUpdateTime.current = now;
     }
   });
 
-  // Handle click to place or remove cube
+  // Handle right-click to toggle removal mode
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      // Check if we should remove a cube (right-click or cmd+click)
-      const isRemoveAction = e.button === 2 || (e.button === 0 && e.metaKey);
-
-      if (isRemoveAction) {
-        // If we have a preview position, try to remove a cube at that position
-        if (previewPosition) {
-          const cubeAtPosition = getCubeAtPosition(previewPosition);
-
-          // Only allow removal if the cube belongs to the local player
-          if (cubeAtPosition && cubeAtPosition.playerId === localPlayerId) {
-            removeCube(previewPosition);
-          }
-        }
-      } else if (previewPosition && isValidPlacement && !hasReachedLimit()) {
-        // Normal left-click to place a cube
-        addCube(previewPosition);
-      }
-    };
-
-    // Prevent context menu on right-click
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
+      console.log("Right-click detected");
+
+      // Set right-click mode
+      setIsRightClickMode(true);
+
+      // Also trigger a click event to handle the removal
+      if (hoverRemovableCube) {
+        console.log(
+          "Attempting to remove cube on right-click at:",
+          hoverRemovableCube
+        );
+        removeCube(hoverRemovableCube);
+      }
+
+      // Set a timeout to reset right-click mode after a short delay
+      setTimeout(() => {
+        setIsRightClickMode(false);
+      }, 300);
     };
 
-    window.addEventListener("click", handleClick);
     window.addEventListener("contextmenu", handleContextMenu);
 
     return () => {
-      window.removeEventListener("click", handleClick);
       window.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, [
-    previewPosition,
-    isValidPlacement,
-    addCube,
-    removeCube,
-    hasReachedLimit,
-    getCubeAtPosition,
-    localPlayerId,
-  ]);
+  }, [hoverRemovableCube, removeCube]);
 
-  // Don't render anything if we don't have a position or have reached the limit
-  if (!previewPosition || hasReachedLimit()) return null;
+  // Handle command+click to remove cube
+  useEffect(() => {
+    const handleCommandClick = (e: MouseEvent) => {
+      // Only handle command+click
+      if (e.metaKey && e.button === 0) {
+        console.log("Command+click detected");
+
+        // Prevent default to avoid other click handlers
+        e.preventDefault();
+        e.stopPropagation();
+
+        // If we have a hoverable removable cube, remove it
+        if (hoverRemovableCube) {
+          console.log(
+            "Attempting to remove cube on command+click at:",
+            hoverRemovableCube
+          );
+          removeCube(hoverRemovableCube);
+        } else {
+          console.log("No removable cube found for command+click");
+        }
+      }
+    };
+
+    window.addEventListener("click", handleCommandClick, true); // Use capture phase
+
+    return () => {
+      window.removeEventListener("click", handleCommandClick, true);
+    };
+  }, [hoverRemovableCube, removeCube]);
+
+  // Handle regular click to place cube
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      // Only handle regular clicks (not command+click or right-click)
+      if (!e.metaKey && e.button === 0) {
+        if (previewPosition && isValidPlacement && !hasReachedLimit()) {
+          // Normal left-click to place a cube
+          addCube(previewPosition);
+        }
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+
+    return () => {
+      window.removeEventListener("click", handleClick);
+    };
+  }, [previewPosition, isValidPlacement, addCube, hasReachedLimit]);
 
   return (
     <>
-      {/* Render the preview cube */}
-      <mesh
-        ref={previewMeshRef}
-        position={[previewPosition.x, previewPosition.y, previewPosition.z]}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color={isValidPlacement ? "green" : "red"}
-          transparent={true}
-          opacity={0.5}
-        />
-      </mesh>
+      {/* Render the preview cube (only in placement mode) */}
+      {previewPosition && !isRemovalMode && (
+        <mesh
+          ref={previewMeshRef}
+          position={[previewPosition.x, previewPosition.y, previewPosition.z]}
+        >
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial
+            color={isValidPlacement ? "green" : "red"}
+            transparent={true}
+            opacity={0.5}
+          />
+        </mesh>
+      )}
+
+      {/* Render the removal indicator (only in removal mode) */}
+      {hoverRemovableCube && isRemovalMode && (
+        <mesh
+          ref={removalIndicatorRef}
+          position={[
+            hoverRemovableCube.x,
+            hoverRemovableCube.y,
+            hoverRemovableCube.z,
+          ]}
+        >
+          <boxGeometry args={[1.1, 1.1, 1.1]} />
+          <meshStandardMaterial
+            color="red"
+            transparent={true}
+            opacity={0.6}
+            wireframe={false}
+            emissive="red"
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+      )}
     </>
   );
 };

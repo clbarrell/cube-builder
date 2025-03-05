@@ -70,8 +70,6 @@ const PlayerVisualization: React.FC = () => {
       )
     )
   );
-  console.log("Other players", otherPlayers);
-
   // Memoize the player list to prevent unnecessary re-renders
   const playerElements = useMemo(() => {
     return otherPlayers.map((player) => (
@@ -84,6 +82,10 @@ const PlayerVisualization: React.FC = () => {
       />
     ));
   }, [otherPlayers]);
+  if (otherPlayers.length === 0) {
+    return null;
+  }
+  console.log("Other players", otherPlayers);
 
   return <>{playerElements}</>;
 };

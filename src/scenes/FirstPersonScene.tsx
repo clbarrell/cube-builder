@@ -9,6 +9,9 @@ import { usePlayerStore } from "../game/state/PlayerState";
 import { Vector3 } from "three";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { getSocket } from "../services/socketService";
+import CursorDebug from "../components/UI/CursorDebug";
+import { useDebugStore } from "../game/state/DebugState";
+import { useShallow } from "zustand/react/shallow";
 
 const CanvasFallback = () => (
   <div className="w-full h-full flex items-center justify-center bg-gray-800">
@@ -26,14 +29,28 @@ const CanvasFallback = () => (
 );
 
 const FirstPersonScene: React.FC = () => {
-  const cleanup = usePlayerStore((state) => state.cleanup);
-  const initialize = usePlayerStore((state) => state.initialize);
-  const joinGame = usePlayerStore((state) => state.joinGame);
-  const setLocalPlayer = usePlayerStore((state) => state.setLocalPlayer);
+  const cleanup = usePlayerStore.getState().cleanup;
+  const initialize = usePlayerStore.getState().initialize;
+  const joinGame = usePlayerStore.getState().joinGame;
+  const setLocalPlayer = usePlayerStore.getState().setLocalPlayer;
   const [isInitialized, setIsInitialized] = useState(false);
+  const debugModeEnabled = useDebugStore((state) => state.debugModeEnabled);
+  const toggleDebugMode = useDebugStore.getState().toggleDebugMode;
 
   // Memoize the default position to prevent recreation on every render
   const defaultPosition = useMemo(() => new Vector3(0, 2, 5), []);
+
+  // Get debug data from the store
+  const debugData = useDebugStore(
+    useShallow((state) => ({
+      cursorPosition: state.cursorPosition,
+      previewPosition: state.previewPosition,
+      isValidPlacement: state.isValidPlacement,
+      isRemovalMode: state.isRemovalMode,
+      hoverRemovableCube: state.hoverRemovableCube,
+      placementPosition: state.placementPosition,
+    }))
+  );
 
   // Initialize socket connection only once
   useEffect(() => {
@@ -46,6 +63,21 @@ const FirstPersonScene: React.FC = () => {
       cleanup();
     };
   }, [initialize, cleanup]);
+
+  // Add keyboard shortcut for toggling debug mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Toggle debug mode with - key
+      if (e.key === "-") {
+        toggleDebugMode();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   // Memoize the name submission handler to prevent unnecessary re-renders
   const handleNameSubmit = useCallback(
@@ -98,6 +130,16 @@ const FirstPersonScene: React.FC = () => {
       <Crosshair />
       <CubeCounter />
       <PlayerNameInput onNameSubmit={handleNameSubmit} />
+
+      {/* Show cursor debug UI if debug mode is on */}
+      {debugModeEnabled && <CursorDebug {...debugData} />}
+
+      {/* Debug toggle indicator */}
+      {debugModeEnabled && (
+        <div className="fixed bottom-4 right-4 bg-black/70 text-white py-2 px-3 rounded-md font-mono text-xs z-50">
+          Debug Mode: ON (Press - to toggle)
+        </div>
+      )}
     </div>
   );
 };

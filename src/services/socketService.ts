@@ -36,8 +36,25 @@ let socket: Socket | null = null;
 
 // Server URL - use environment variable in production
 // Avoid accessing import.meta.env directly during initialization
-const getServerUrl = () =>
-  import.meta.env.VITE_SERVER_URL || "http://localhost:3001";
+const getServerUrl = () => {
+  // Check for environment variable first
+  if (import.meta.env.VITE_SERVER_URL) {
+    return import.meta.env.VITE_SERVER_URL;
+  }
+
+  // Check for URL parameters (allows connecting to a specific IP via URL)
+  const urlParams = new URLSearchParams(window.location.search);
+  const serverParam = urlParams.get("server");
+  if (serverParam) {
+    // If only IP is provided, add the default port
+    return serverParam.includes(":")
+      ? `http://${serverParam}`
+      : `http://${serverParam}:3001`;
+  }
+
+  // Default to localhost
+  return "http://localhost:3001";
+};
 
 // Initialize socket connection with reconnection options
 export const initializeSocket = (): Socket => {

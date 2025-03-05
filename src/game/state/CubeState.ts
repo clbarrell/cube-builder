@@ -21,7 +21,7 @@ interface CubeState {
   getCubeAtPosition: (position: THREE.Vector3) => Cube | undefined;
 }
 
-export const useCubeStore = create<CubeState>((set, get) => ({
+export const useCubeStore = create<CubeState>()((set, get) => ({
   cubes: [],
   maxCubesPerPlayer: 25,
 
@@ -61,7 +61,6 @@ export const useCubeStore = create<CubeState>((set, get) => ({
         cubes: [...state.cubes, newCube],
       }));
 
-      console.log("Now trying to emit cube to server");
       // Ensure socket is connected before emitting
       ensureSocketConnected()
         .then(() => {
@@ -142,11 +141,14 @@ export const useCubeStore = create<CubeState>((set, get) => ({
   },
 
   getCubeAtPosition: (position) => {
+    // Use a small epsilon for floating point comparison
+    const epsilon = 0.1;
+
     return get().cubes.find(
       (cube) =>
-        cube.position.x === position.x &&
-        cube.position.y === position.y &&
-        cube.position.z === position.z
+        Math.abs(cube.position.x - position.x) < epsilon &&
+        Math.abs(cube.position.y - position.y) < epsilon &&
+        Math.abs(cube.position.z - position.z) < epsilon
     );
   },
 }));
