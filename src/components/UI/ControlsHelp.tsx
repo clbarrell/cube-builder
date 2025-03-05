@@ -8,7 +8,7 @@ const ControlsHelp: React.FC = () => {
     useShallow((state) => state.getPlayerNames())
   );
   return (
-    <div className="fixed top-0 left-0 px-4 py-2 text-sm select-none text-white bg-black/70 rounded-br-lg flex flex-col gap-2">
+    <div className="fixed top-0 left-0 select-none bg-black/70 text-white py-2 px-3 font-mono text-xs rounded-br-md flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium flex items-center gap-2">
           <div>👤</div>
@@ -23,6 +23,7 @@ const ControlsHelp: React.FC = () => {
         <p>Space: Move up</p>
         <p>Shift: Move down</p>
         <p>Click: Place cube</p>
+        <p>Ctrl+Click: Remove cube</p>
         <p>Esc: exit cursor</p>
       </div>
       <div>

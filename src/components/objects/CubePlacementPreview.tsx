@@ -15,16 +15,13 @@ const CubePlacementPreview: React.FC = () => {
   const localPlayerId = usePlayerStore((state) => state.localPlayerId);
   const debugModeEnabled = useDebugStore((state) => state.debugModeEnabled);
 
-  // Track command key press for removal mode
-  const isMetaLeftPressed = useKeyPress("MetaLeft");
-  const isMetaRightPressed = useKeyPress("MetaRight");
-  const isCommandPressed = isMetaLeftPressed || isMetaRightPressed;
+  // Track control key press for removal mode
+  const isControlLeftPressed = useKeyPress("ControlLeft");
+  const isControlRightPressed = useKeyPress("ControlRight");
+  const isControlPressed = isControlLeftPressed || isControlRightPressed;
 
-  // State for right-click mode (alternative to command key)
-  const [isRightClickMode, setIsRightClickMode] = useState(false);
-
-  // Combined removal mode state
-  const isRemovalMode = isCommandPressed || isRightClickMode;
+  // Removal mode state
+  const isRemovalMode = isControlPressed;
 
   // State for the preview cube
   const [previewPosition, setPreviewPosition] = useState<THREE.Vector3 | null>(
@@ -145,7 +142,7 @@ const CubePlacementPreview: React.FC = () => {
     return () => {
       document.body.style.cursor = "default";
     };
-  }, [isRemovalMode, hoverRemovableCube, isCommandPressed, isRightClickMode]);
+  }, [isRemovalMode, hoverRemovableCube, isControlPressed]);
 
   // Main update loop
   useFrame(() => {
@@ -272,43 +269,12 @@ const CubePlacementPreview: React.FC = () => {
     }
   });
 
-  // Handle right-click to toggle removal mode
+  // Handle control+click to remove cube
   useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      console.log("Right-click detected");
-
-      // Set right-click mode
-      setIsRightClickMode(true);
-
-      // Also trigger a click event to handle the removal
-      if (hoverRemovableCube) {
-        console.log(
-          "Attempting to remove cube on right-click at:",
-          hoverRemovableCube
-        );
-        removeCube(hoverRemovableCube);
-      }
-
-      // Set a timeout to reset right-click mode after a short delay
-      setTimeout(() => {
-        setIsRightClickMode(false);
-      }, 300);
-    };
-
-    window.addEventListener("contextmenu", handleContextMenu);
-
-    return () => {
-      window.removeEventListener("contextmenu", handleContextMenu);
-    };
-  }, [hoverRemovableCube, removeCube]);
-
-  // Handle command+click to remove cube
-  useEffect(() => {
-    const handleCommandClick = (e: MouseEvent) => {
-      // Only handle command+click
-      if (e.metaKey && e.button === 0) {
-        console.log("Command+click detected");
+    const handleControlClick = (e: MouseEvent) => {
+      // Only handle control+click
+      if (e.ctrlKey && e.button === 0) {
+        console.log("Control+click detected");
 
         // Prevent default to avoid other click handlers
         e.preventDefault();
@@ -317,28 +283,28 @@ const CubePlacementPreview: React.FC = () => {
         // If we have a hoverable removable cube, remove it
         if (hoverRemovableCube) {
           console.log(
-            "Attempting to remove cube on command+click at:",
+            "Attempting to remove cube on control+click at:",
             hoverRemovableCube
           );
           removeCube(hoverRemovableCube);
         } else {
-          console.log("No removable cube found for command+click");
+          console.log("No removable cube found for control+click");
         }
       }
     };
 
-    window.addEventListener("click", handleCommandClick, true); // Use capture phase
+    window.addEventListener("click", handleControlClick, true); // Use capture phase
 
     return () => {
-      window.removeEventListener("click", handleCommandClick, true);
+      window.removeEventListener("click", handleControlClick, true);
     };
   }, [hoverRemovableCube, removeCube]);
 
   // Handle regular click to place cube
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      // Only handle regular clicks (not command+click or right-click)
-      if (!e.metaKey && e.button === 0) {
+      // Only handle regular clicks (not control+click)
+      if (!e.ctrlKey && e.button === 0) {
         if (previewPosition && isValidPlacement && !hasReachedLimit()) {
           // Normal left-click to place a cube
           addCube(previewPosition);
