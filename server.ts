@@ -74,39 +74,36 @@ io.on("connection", (socket) => {
   // Handle player:join
   socket.on("player:join", (data) => {
     const { name, position } = data;
+    let uniqueName = name;
+    let counter = 1;
 
-    // Check if name is already taken by another active connection
-    const existingSocketId = nameToSocketId[name];
-    if (
-      existingSocketId &&
-      existingSocketId !== socket.id &&
-      gameState.players[existingSocketId]
-    ) {
-      // Name is already in use by an active player
-      socket.emit("player:join:error", { message: "Name already in use" });
-      return;
-    }
+    // Check if this is a reconnection with the same name
+    const isReconnecting =
+      nameToSocketId[name] === socket.id || !gameState.players[name];
 
-    // Check if this player is reconnecting with the same name
-    if (existingSocketId && existingSocketId !== socket.id) {
-      // Remove the old socket ID mapping
-      delete socketIdToName[existingSocketId];
+    // If not reconnecting, check for name conflicts
+    if (!isReconnecting) {
+      // Check if name is already taken by another active player
+      while (gameState.players[uniqueName]) {
+        uniqueName = `${name}${counter}`;
+        counter++;
+      }
     }
 
     // Update name mappings
-    nameToSocketId[name] = socket.id;
-    socketIdToName[socket.id] = name;
+    nameToSocketId[uniqueName] = socket.id;
+    socketIdToName[socket.id] = uniqueName;
 
     // Create new player
     const player = {
-      id: name, // Use name as ID instead of socket.id
-      name,
+      id: uniqueName, // Use name as player ID
+      name: uniqueName,
       position,
       rotation: { x: 0, y: 0 },
     };
 
     // Add player to game state
-    gameState.players[name] = player;
+    gameState.players[uniqueName] = player;
 
     // Broadcast to other players
     socket.broadcast.emit("player:join", player);
@@ -114,7 +111,15 @@ io.on("connection", (socket) => {
     // Send current state to new player
     socket.emit("state:sync", gameState);
 
-    console.log(`Player joined: ${name} (${socket.id})`);
+    // Inform client if name was modified
+    if (uniqueName !== name) {
+      socket.emit("player:name:modified", {
+        original: name,
+        modified: uniqueName,
+      });
+    }
+
+    console.log(`Player joined: ${uniqueName} (${socket.id})`);
   });
 
   // Handle player:move
@@ -129,7 +134,7 @@ io.on("connection", (socket) => {
 
       // Broadcast to other players
       socket.broadcast.emit("player:move", {
-        id: playerName, // Use name as ID
+        id: playerName, // Use player name as ID
         position,
         rotation,
       });
@@ -139,18 +144,18 @@ io.on("connection", (socket) => {
   // Handle cube:add
   socket.on("cube:add", (data) => {
     // Check if data is valid
-    if (!data || !data.position || !data.playerId || !data.playerName) {
+    if (!data || !data.position || !data.playerName) {
       console.error("Invalid cube:add data:", data);
       return;
     }
 
-    const { position, playerId, playerName } = data;
+    const { position, playerName } = data;
     const currentPlayerName = socketIdToName[socket.id];
 
-    // Validate that the player is the one making the request or has the same name
-    if (playerId !== currentPlayerName && playerId !== socket.id) {
+    // Validate that the player is the one making the request
+    if (playerName !== currentPlayerName) {
       console.warn(
-        `Player ${currentPlayerName} tried to add a cube for ${playerId}`
+        `Player ${currentPlayerName} tried to add a cube for ${playerName}`
       );
       return;
     }
@@ -167,8 +172,8 @@ io.on("connection", (socket) => {
       // Add the cube to the game state with player name as ID
       const newCube = {
         position,
-        playerId: currentPlayerName, // Use name as ID
-        playerName,
+        playerId: currentPlayerName, // Use player name as ID
+        playerName: currentPlayerName,
       };
 
       gameState.cubes.push(newCube);
@@ -177,7 +182,7 @@ io.on("connection", (socket) => {
       socket.broadcast.emit("cube:add", newCube);
 
       console.log(
-        `Player ${playerName} (${socket.id}) added a cube at`,
+        `Player ${currentPlayerName} (${socket.id}) added a cube at`,
         position,
         "total:",
         gameState.cubes.length
@@ -192,12 +197,12 @@ io.on("connection", (socket) => {
     console.log("Received cube:remove event with data:", data);
 
     // Check if data is valid
-    if (!data || !data.position || !data.playerId) {
+    if (!data || !data.position) {
       console.error("Invalid cube:remove data:", data);
       return;
     }
 
-    const { position, playerId } = data;
+    const { position } = data;
     const currentPlayerName = socketIdToName[socket.id];
 
     // Find the cube at this position
@@ -212,8 +217,8 @@ io.on("connection", (socket) => {
     if (cubeIndex !== -1) {
       const cube = gameState.cubes[cubeIndex];
 
-      // Allow removal if the cube belongs to this player name or socket ID
-      if (cube.playerId === currentPlayerName || cube.playerId === playerId) {
+      // Allow removal if the cube belongs to this player name
+      if (cube.playerId === currentPlayerName) {
         // Remove the cube from the game state
         gameState.cubes.splice(cubeIndex, 1);
 
@@ -240,14 +245,17 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const playerName = socketIdToName[socket.id];
 
-    // Get player info before removal
-    const player = playerName ? gameState.players[playerName] : null;
-
     // Remove player from game state
-    if (player) {
-      delete gameState.players[playerName];
+    if (playerName && gameState.players[playerName]) {
+      const player = gameState.players[playerName];
+
+      // Only delete the player if this socket owns the name
+      if (nameToSocketId[playerName] === socket.id) {
+        delete gameState.players[playerName];
+        delete nameToSocketId[playerName];
+      }
+
       delete socketIdToName[socket.id];
-      // Don't delete from nameToSocketId to allow reconnection with same name
 
       // Broadcast to other players
       io.emit("player:leave", { id: playerName });
