@@ -322,7 +322,7 @@ const CubePlacementPreview: React.FC = () => {
   return (
     <>
       {/* Render the preview cube (only in placement mode) */}
-      {previewPosition && !isRemovalMode && (
+      {previewPosition && !isRemovalMode && !hasReachedLimit() && (
         <mesh
           ref={previewMeshRef}
           position={[previewPosition.x, previewPosition.y, previewPosition.z]}
