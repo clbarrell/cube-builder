@@ -11,6 +11,8 @@ import {
   offAllEvents,
   disconnect,
   ensureSocketConnected,
+  getLocalPlayerName,
+  setLocalPlayerName,
 } from "../../services/socketService";
 import { initializeCubeSocketListeners } from "./CubeState";
 
@@ -122,16 +124,28 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
             players: state.players,
             count: Object.keys(state.players).length,
           });
+
+          // If we have a local player name, find our player in the state
+          const localName = getLocalPlayerName();
+          if (localName && state.players[localName]) {
+            set({
+              localPlayerId: localName,
+              localPlayerName: localName,
+            });
+          }
         });
 
-        // Set socket ID as local player ID when connected
+        // Set local player name as ID when connected
         socket.on("connect", () => {
           console.log("Connected to server with ID:", socket.id);
 
           // If we already have a local player name, update the ID
-          const { localPlayerName } = get();
-          if (localPlayerName) {
-            set({ localPlayerId: socket.id });
+          const localName = getLocalPlayerName();
+          if (localName) {
+            set({
+              localPlayerId: localName,
+              localPlayerName: localName,
+            });
           }
         });
 
@@ -149,6 +163,15 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   // Join the game with a name
   joinGame: async (name, position) => {
     const success = await joinGameService(name, position);
+
+    if (success) {
+      // Set local player ID and name to the name (not socket ID)
+      set({
+        localPlayerId: name,
+        localPlayerName: name,
+      });
+    }
+
     return success;
   },
 
@@ -192,9 +215,12 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   // Set local player ID and name
   setLocalPlayer: (id, name) => {
     set({
-      localPlayerId: id,
+      localPlayerId: name, // Use name as ID
       localPlayerName: name,
     });
+
+    // Also update in socket service
+    setLocalPlayerName(name);
   },
 
   // Clean up event listeners and disconnect

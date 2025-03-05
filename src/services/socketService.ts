@@ -33,6 +33,7 @@ export interface GameState {
 
 // Socket.io client instance
 let socket: Socket | null = null;
+let localPlayerName: string | null = null;
 
 // Server URL - use environment variable in production
 // Avoid accessing import.meta.env directly during initialization
@@ -166,25 +167,54 @@ export const ensureSocketConnected = (): Promise<Socket> => {
   });
 };
 
+// Set local player name
+export const setLocalPlayerName = (name: string): void => {
+  localPlayerName = name;
+};
+
+// Get local player name
+export const getLocalPlayerName = (): string | null => {
+  return localPlayerName;
+};
+
 // Modify joinGame to use ensureSocketConnected
 export const joinGame = async (
   name: string,
   position: Vector3
 ): Promise<boolean> => {
   try {
+    // Store the player name locally
+    setLocalPlayerName(name);
+
     // Ensure socket is connected before joining
-    await ensureSocketConnected();
+    const socket = await ensureSocketConnected();
 
-    safeEmit("player:join", {
-      name,
-      position: {
-        x: position.x,
-        y: position.y,
-        z: position.z,
-      },
+    // Set up error handler for name already in use
+    return new Promise((resolve) => {
+      // Handle error if name is already in use
+      const errorHandler = (data: { message: string }) => {
+        console.error("Failed to join game:", data.message);
+        socket.off("player:join:error", errorHandler);
+        resolve(false);
+      };
+
+      socket.once("player:join:error", errorHandler);
+
+      // Set a timeout to resolve the promise if no error is received
+      setTimeout(() => {
+        socket.off("player:join:error", errorHandler);
+        resolve(true);
+      }, 1000);
+
+      safeEmit("player:join", {
+        name,
+        position: {
+          x: position.x,
+          y: position.y,
+          z: position.z,
+        },
+      });
     });
-
-    return true;
   } catch (error) {
     console.error("Failed to join game:", error);
     return false;
@@ -203,6 +233,29 @@ export const updatePosition = (
       z: position.z,
     },
     rotation,
+  });
+};
+
+// Add cube with player name as ID
+export const addCube = (
+  position: { x: number; y: number; z: number },
+  playerName: string
+): void => {
+  safeEmit("cube:add", {
+    position,
+    playerId: playerName,
+    playerName,
+  });
+};
+
+// Remove cube with player name as ID
+export const removeCube = (
+  position: { x: number; y: number; z: number },
+  playerName: string
+): void => {
+  safeEmit("cube:remove", {
+    position,
+    playerId: playerName,
   });
 };
 

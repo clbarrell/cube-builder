@@ -2,11 +2,12 @@ import { create } from "zustand";
 import * as THREE from "three";
 import {
   Cube,
-  safeEmit,
   onStateSync,
   onCubeAdd,
   onCubeRemove,
   ensureSocketConnected,
+  addCube as addCubeService,
+  removeCube as removeCubeService,
 } from "../../services/socketService";
 import { usePlayerStore } from "./PlayerState";
 
@@ -51,7 +52,7 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
           y: position.y,
           z: position.z,
         },
-        playerId: localPlayer.id,
+        playerId: localPlayer.name,
         playerName: localPlayer.name,
       };
 
@@ -64,8 +65,15 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
       // Ensure socket is connected before emitting
       ensureSocketConnected()
         .then(() => {
-          // Emit to server
-          safeEmit("cube:add", newCube as unknown as Record<string, unknown>);
+          // Use the addCube service function
+          addCubeService(
+            {
+              x: position.x,
+              y: position.y,
+              z: position.z,
+            },
+            localPlayer.name
+          );
         })
         .catch((error) => {
           console.error("Failed to connect socket for cube:add:", error);
@@ -86,7 +94,10 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
     const cube = get().getCubeAtPosition(position);
 
     // Only remove if it exists and belongs to the local player
-    if (cube && cube.playerId === localPlayer.id) {
+    if (
+      cube &&
+      (cube.playerId === localPlayer.name || cube.playerId === localPlayer.id)
+    ) {
       console.log("Removing cube at position:", position);
       // Update local state
       set((state) => ({
@@ -102,15 +113,15 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
       // Ensure socket is connected before emitting
       ensureSocketConnected()
         .then(() => {
-          // Emit to server
-          safeEmit("cube:remove", {
-            position: {
+          // Use the removeCube service function
+          removeCubeService(
+            {
               x: position.x,
               y: position.y,
               z: position.z,
             },
-            playerId: localPlayer.id,
-          } as unknown as Record<string, unknown>);
+            localPlayer.name
+          );
         })
         .catch((error) => {
           console.error("Failed to connect socket for cube:remove:", error);
@@ -132,7 +143,8 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
 
     if (!localPlayer) return true;
 
-    const playerCubes = state.getCubesByPlayer(localPlayer.id);
+    // Use player name as ID to count cubes
+    const playerCubes = state.getCubesByPlayer(localPlayer.name);
     return playerCubes.length >= state.maxCubesPerPlayer;
   },
 
