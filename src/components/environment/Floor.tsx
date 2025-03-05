@@ -52,7 +52,11 @@ const Floor: React.FC = () => {
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[floorSizeWidth, floorSizeHeight]} />
-        <meshStandardMaterial color="#555555" />
+        <meshStandardMaterial
+          color="#4a6741" // Grass green color
+          roughness={0.8}
+          metalness={0.1}
+        />
       </mesh>
       <gridHelper
         args={[floorSizeWidth, floorSizeHeight, "#888888", "#444444"]}

@@ -1,0 +1,124 @@
+---
+description: Guidelines for implementing shadows in React Three Fiber components
+globs: *.tsx
+alwaysApply: false
+---
+# Shadow Implementation Guide
+
+Standards for implementing shadows in the React Three Fiber application.
+
+<rule>
+name: shadow_implementation
+description: Guidelines for implementing shadows in React Three Fiber components
+
+## Shadow System Overview
+
+This rule describes how to properly implement shadows in our React Three Fiber application with the procedural sky.
+
+### Key Components
+
+1. **Canvas Configuration**
+   - Canvas must have shadows enabled with PCFSoftShadowMap
+   - Example: `<Canvas shadows={{ type: PCFSoftShadowMap }} />`
+
+2. **Light Setup**
+   - Directional light must have `castShadow` enabled
+   - Shadow camera parameters must be properly configured
+   - Sun position should match between ProceduralSky and directional light
+
+3. **Objects**
+   - Objects that cast shadows must have `castShadow` prop
+   - Objects that receive shadows must have `receiveShadow` prop
+
+### Implementation Guidelines
+
+#### Canvas Setup
+```tsx
+import { PCFSoftShadowMap } from "three";
+
+<Canvas 
+  shadows={{ type: PCFSoftShadowMap }} 
+  camera={{ fov: 75, position: [0, 2, 5] }}
+>
+  {/* Scene content */}
+</Canvas>
+```
+
+#### Lighting Setup
+```tsx
+<directionalLight
+  position={[10, 20, 15]} // Position for good shadows
+  intensity={1.2}
+  castShadow
+  shadow-bias={-0.0005} // Reduce shadow acne
+  shadow-normalBias={0.04} // Improve shadow edge quality
+  shadow-mapSize={[2048, 2048]} // Higher resolution shadows
+  shadow-camera-left={-20}
+  shadow-camera-right={20}
+  shadow-camera-top={20}
+  shadow-camera-bottom={-20}
+  shadow-camera-near={0.5}
+  shadow-camera-far={50}
+/>
+```
+
+#### ProceduralSky Configuration
+```tsx
+// Use the same sun position as in the directional light
+const sunPosition: [number, number, number] = [10, 20, 15];
+
+<ProceduralSky 
+  sunPosition={sunPosition}
+  rayleigh={0.3}
+/>
+```
+
+#### Object Shadow Properties
+```tsx
+// For objects that cast shadows
+<mesh castShadow>
+  <boxGeometry />
+  <meshStandardMaterial />
+</mesh>
+
+// For objects that receive shadows
+<mesh receiveShadow>
+  <planeGeometry />
+  <meshStandardMaterial />
+</mesh>
+
+// For objects that both cast and receive shadows
+<mesh castShadow receiveShadow>
+  <boxGeometry />
+  <meshStandardMaterial />
+</mesh>
+```
+
+### Troubleshooting
+
+If shadows aren't appearing:
+
+1. Verify the directional light position is appropriate for your scene
+2. Check that shadow camera frustum covers your objects
+3. Ensure objects have proper castShadow/receiveShadow props
+4. Try adjusting shadow-bias to reduce shadow acne
+5. Use debug helpers to visualize the shadow camera:
+
+```tsx
+const directionalLightRef = useRef<THREE.DirectionalLight>(null);
+useHelper(directionalLightRef, THREE.DirectionalLightHelper, 5);
+useHelper(directionalLightRef, THREE.CameraHelper);
+
+<directionalLight ref={directionalLightRef} ... />
+```
+
+### Performance Considerations
+
+- Higher shadow map sizes (shadow-mapSize) improve quality but reduce performance
+- Consider using lower resolution shadows for mobile devices
+- For complex scenes, implement shadow culling or use baked shadows for static objects
+
+metadata:
+  priority: medium
+  version: 1.0
+</rule> 

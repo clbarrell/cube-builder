@@ -236,26 +236,25 @@ export const updatePosition = (
   });
 };
 
-// Add cube with player name as ID
+// Add cube with player name
 export const addCube = (
   position: { x: number; y: number; z: number },
   playerName: string
 ): void => {
   safeEmit("cube:add", {
     position,
-    playerId: playerName,
     playerName,
   });
 };
 
-// Remove cube with player name as ID
-export const removeCube = (
-  position: { x: number; y: number; z: number },
-  playerName: string
-): void => {
+// Remove cube
+export const removeCube = (position: {
+  x: number;
+  y: number;
+  z: number;
+}): void => {
   safeEmit("cube:remove", {
     position,
-    playerId: playerName,
   });
 };
 
@@ -289,6 +288,12 @@ export const onPlayerLeave = (
   callback: (data: { id: string }) => void
 ): void => {
   safeOn("player:leave", callback);
+};
+
+export const onNameModified = (
+  callback: (data: { original: string; modified: string }) => void
+): void => {
+  safeOn("player:name:modified", callback);
 };
 
 export const onPlayerMove = (

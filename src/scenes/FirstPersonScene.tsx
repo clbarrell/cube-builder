@@ -6,7 +6,7 @@ import Crosshair from "../components/UI/Crosshair";
 import CubeCounter from "../components/UI/CubeCounter";
 import PlayerNameInput from "../components/UI/PlayerNameInput";
 import { usePlayerStore } from "../game/state/PlayerState";
-import { Vector3 } from "three";
+import { Vector3, PCFSoftShadowMap } from "three";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { getSocket } from "../services/socketService";
 import CursorDebug from "../components/UI/CursorDebug";
@@ -122,7 +122,10 @@ const FirstPersonScene: React.FC = () => {
   return (
     <div className="w-full h-full">
       <ErrorBoundary fallback={<CanvasFallback />}>
-        <Canvas shadows camera={{ fov: 75, position: [0, 2, 5] }}>
+        <Canvas
+          shadows={{ type: PCFSoftShadowMap }}
+          camera={{ fov: 75, position: [0, 2, 5] }}
+        >
           <MainScene />
         </Canvas>
       </ErrorBoundary>

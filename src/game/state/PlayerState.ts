@@ -8,11 +8,12 @@ import {
   onPlayerLeave,
   onPlayerMove,
   onStateSync,
+  onNameModified,
   offAllEvents,
   disconnect,
   ensureSocketConnected,
-  getLocalPlayerName,
   setLocalPlayerName,
+  getLocalPlayerName,
 } from "../../services/socketService";
 import { initializeCubeSocketListeners } from "./CubeState";
 
@@ -73,6 +74,27 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
           });
         });
 
+        // Handle name modification due to conflicts
+        onNameModified(({ original, modified }) => {
+          console.log(
+            `Username "${original}" was taken, assigned "${modified}" instead`
+          );
+
+          // Update both ID and name when name is modified
+          set({
+            localPlayerId: modified,
+            localPlayerName: modified,
+          });
+
+          // Update in socket service
+          setLocalPlayerName(modified);
+
+          // Optionally show a notification to the user
+          window.alert(
+            `Username "${original}" was taken, assigned "${modified}" instead`
+          );
+        });
+
         // Register all event handlers before any async operations
         onPlayerLeave(({ id }) => {
           set((state) => {
@@ -125,7 +147,7 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
             count: Object.keys(state.players).length,
           });
 
-          // If we have a local player name, find our player in the state
+          // Find our player in the state by name
           const localName = getLocalPlayerName();
           if (localName && state.players[localName]) {
             set({
@@ -135,11 +157,11 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
           }
         });
 
-        // Set local player name as ID when connected
+        // Set player name as ID when connected
         socket.on("connect", () => {
           console.log("Connected to server with ID:", socket.id);
 
-          // If we already have a local player name, update the ID
+          // If we already have a local player name, use it as ID
           const localName = getLocalPlayerName();
           if (localName) {
             set({
@@ -162,17 +184,23 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
 
   // Join the game with a name
   joinGame: async (name, position) => {
-    const success = await joinGameService(name, position);
+    try {
+      await ensureSocketConnected();
+      const success = await joinGameService(name, position);
 
-    if (success) {
-      // Set local player ID and name to the name (not socket ID)
-      set({
-        localPlayerId: name,
-        localPlayerName: name,
-      });
+      if (success) {
+        // Set local player ID to name, not socket ID
+        set({
+          localPlayerId: name,
+          localPlayerName: name,
+        });
+      }
+
+      return success;
+    } catch (error) {
+      console.error("Failed to join game:", error);
+      return false;
     }
-
-    return success;
   },
 
   // Update player position
@@ -215,7 +243,7 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   // Set local player ID and name
   setLocalPlayer: (id, name) => {
     set({
-      localPlayerId: name, // Use name as ID
+      localPlayerId: name, // Use name as ID, not socket.id
       localPlayerName: name,
     });
 

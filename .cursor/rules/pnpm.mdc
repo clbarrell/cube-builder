@@ -1,5 +1,6 @@
 ---
 description: pnpm
 globs: *.*
+alwaysApply: true
 ---
 Always use pnpm as the package manager.

@@ -35,7 +35,7 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
       return;
     }
 
-    // Check if we've reached the maximum number of cubes for this player
+    // Check if player has reached their cube limit
     if (get().hasReachedLimit()) {
       console.warn("Cannot add cube: Reached cube limit");
       return;
@@ -94,10 +94,7 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
     const cube = get().getCubeAtPosition(position);
 
     // Only remove if it exists and belongs to the local player
-    if (
-      cube &&
-      (cube.playerId === localPlayer.name || cube.playerId === localPlayer.id)
-    ) {
+    if (cube && cube.playerId === localPlayer.name) {
       console.log("Removing cube at position:", position);
       // Update local state
       set((state) => ({
@@ -114,14 +111,11 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
       ensureSocketConnected()
         .then(() => {
           // Use the removeCube service function
-          removeCubeService(
-            {
-              x: position.x,
-              y: position.y,
-              z: position.z,
-            },
-            localPlayer.name
-          );
+          removeCubeService({
+            x: position.x,
+            y: position.y,
+            z: position.z,
+          });
         })
         .catch((error) => {
           console.error("Failed to connect socket for cube:remove:", error);
@@ -143,7 +137,7 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
 
     if (!localPlayer) return true;
 
-    // Use player name as ID to count cubes
+    // Use player name as ID
     const playerCubes = state.getCubesByPlayer(localPlayer.name);
     return playerCubes.length >= state.maxCubesPerPlayer;
   },
