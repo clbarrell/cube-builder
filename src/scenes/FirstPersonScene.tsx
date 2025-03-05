@@ -12,6 +12,7 @@ import { getSocket } from "../services/socketService";
 import CursorDebug from "../components/UI/CursorDebug";
 import { useDebugStore } from "../game/state/DebugState";
 import { useShallow } from "zustand/react/shallow";
+import PositionBar from "../components/UI/PositionBar";
 
 const CanvasFallback = () => (
   <div className="w-full h-full flex items-center justify-center bg-gray-800">
@@ -129,11 +130,12 @@ const FirstPersonScene: React.FC = () => {
           <MainScene />
         </Canvas>
       </ErrorBoundary>
+      {/* NON-3D UI */}
       <ControlsHelp />
       <Crosshair />
       <CubeCounter />
       <PlayerNameInput onNameSubmit={handleNameSubmit} />
-
+      <PositionBar />
       {/* Show cursor debug UI if debug mode is on */}
       {debugModeEnabled && <CursorDebug {...debugData} />}
 
