@@ -23,7 +23,7 @@ const TimerDisplay: React.FC = () => {
       if (timer.endTime !== null) {
         setDisplayText(getFormattedTimeLeft());
       } else {
-        setDisplayText("ACTIVE");
+        setDisplayText("");
       }
     } else if (gamePhase === GamePhase.LOBBY) {
       setDisplayText("LOBBY");
@@ -68,6 +68,7 @@ const TimerDisplay: React.FC = () => {
         outlineColor="#000000"
         // Remove rotation inheritance from parent
         rotation={[0, 0, 0]}
+        material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
       >
         {displayText}
       </Text>
