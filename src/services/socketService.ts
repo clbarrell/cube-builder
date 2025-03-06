@@ -50,7 +50,12 @@ let localPlayerName: string | null = null;
 // Server URL - use environment variable in production
 // Avoid accessing import.meta.env directly during initialization
 const getServerUrl = () => {
-  // Check for environment variable first
+  // In production, use a relative URL to connect to the same origin
+  if (import.meta.env.PROD) {
+    return window.location.origin;
+  }
+
+  // Check for environment variable
   if (import.meta.env.VITE_SERVER_URL) {
     return import.meta.env.VITE_SERVER_URL;
   }
