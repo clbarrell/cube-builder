@@ -21,6 +21,11 @@ const getPlayerColor = (playerId: string): string => {
   return `hsl(${h}, 70%, 60%)`;
 };
 
+interface TextFaceConfig {
+  position: [number, number, number];
+  rotation: [number, number, number];
+}
+
 const Cube: React.FC<CubeProps> = ({ position, playerId, playerName }) => {
   const localPlayerId = usePlayerStore((state) => state.localPlayerId);
 
@@ -30,13 +35,28 @@ const Cube: React.FC<CubeProps> = ({ position, playerId, playerName }) => {
   // Memoize the color to avoid recalculating on every render
   const color = useMemo(() => getPlayerColor(playerId), [playerId]);
 
+  // Define positions and rotations for text on each face of the cube
+  const textConfigurations = useMemo<TextFaceConfig[]>(
+    () => [
+      // Front face
+      { position: [0, 0, 0.501], rotation: [0, 0, 0] },
+      // Back face
+      { position: [0, 0, -0.501], rotation: [0, Math.PI, 0] },
+      // Left face
+      { position: [-0.501, 0, 0], rotation: [0, -Math.PI / 2, 0] },
+      // Right face
+      { position: [0.501, 0, 0], rotation: [0, Math.PI / 2, 0] },
+      // Top face
+      { position: [0, 0.501, 0], rotation: [-Math.PI / 2, 0, 0] },
+      // Bottom face
+      { position: [0, -0.501, 0], rotation: [Math.PI / 2, 0, 0] },
+    ],
+    []
+  );
+
   return (
-    <group>
-      <mesh
-        position={[position.x, position.y, position.z]}
-        castShadow
-        receiveShadow
-      >
+    <group position={[position.x, position.y, position.z]}>
+      <mesh castShadow receiveShadow>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial
           color={color}
@@ -45,17 +65,24 @@ const Cube: React.FC<CubeProps> = ({ position, playerId, playerName }) => {
         />
       </mesh>
 
-      {/* Show player name on hover (would need to implement hover state) */}
-      {/* <Text
-        position={[position.x, position.y + 0.7, position.z]}
-        fontSize={0.15}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        visible={false} // Only show on hover
-      >
-        {playerName}
-      </Text> */}
+      {/* Display player name on each face of the cube */}
+      {textConfigurations.map((config, index) => (
+        <Text
+          key={index}
+          position={config.position}
+          rotation={config.rotation}
+          fontSize={0.1}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+          renderOrder={1}
+          material-transparent={true}
+          material-opacity={0.15}
+          maxWidth={0.9}
+        >
+          {playerName}
+        </Text>
+      ))}
     </group>
   );
 };
