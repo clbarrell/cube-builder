@@ -11,6 +11,7 @@ import {
   removeCube as removeCubeService,
 } from "../../services/socketService";
 import { usePlayerStore } from "./PlayerState";
+import { useGameStateStore } from "./GameStateStore";
 
 interface CubeState {
   cubes: Cube[];
@@ -29,10 +30,17 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
 
   addCube: (position) => {
     const localPlayer = usePlayerStore.getState().getLocalPlayer();
+    const canModifyCubes = useGameStateStore.getState().canModifyCubes();
 
     // Don't proceed if player isn't initialized
     if (!localPlayer) {
       console.warn("Cannot add cube: Local player not initialized");
+      return;
+    }
+
+    // Check if game is in active state
+    if (!canModifyCubes) {
+      console.warn("Cannot add cube: Game is not active");
       return;
     }
 
@@ -84,10 +92,17 @@ export const useCubeStore = create<CubeState>()((set, get) => ({
 
   removeCube: (position) => {
     const localPlayer = usePlayerStore.getState().getLocalPlayer();
+    const canModifyCubes = useGameStateStore.getState().canModifyCubes();
 
     // Don't proceed if player isn't initialized
     if (!localPlayer) {
       console.warn("Cannot remove cube: Local player not initialized");
+      return;
+    }
+
+    // Check if game is in active state
+    if (!canModifyCubes) {
+      console.warn("Cannot remove cube: Game is not active");
       return;
     }
 

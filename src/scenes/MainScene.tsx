@@ -8,6 +8,7 @@ import Cubes from "../components/objects/Cubes";
 import CubePlacementPreview from "../components/objects/CubePlacementPreview";
 import PlayerVisualization from "../components/objects/PlayerVisualization";
 import PlayerPositionSync from "../components/objects/PlayerPositionSync";
+import TimerDisplay from "../components/UI/TimerDisplay";
 
 const MainScene: React.FC = () => {
   // Use the same sun position as in the directional light
@@ -24,6 +25,7 @@ const MainScene: React.FC = () => {
       <CubePlacementPreview />
       <PlayerVisualization />
       <PlayerPositionSync />
+      <TimerDisplay />
     </mesh>
   );
 };

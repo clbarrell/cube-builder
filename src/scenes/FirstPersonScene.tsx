@@ -14,6 +14,8 @@ import { useDebugStore } from "../game/state/DebugState";
 import { useShallow } from "zustand/react/shallow";
 import PositionBar from "../components/UI/PositionBar";
 import ServerCommandBar from "../components/UI/ServerCommandBar";
+import GameStateUI from "../components/UI/GameStateUI";
+import { useGameStateStore } from "../game/state/GameStateStore";
 
 const CanvasFallback = () => (
   <div className="w-full h-full flex items-center justify-center bg-gray-800">
@@ -58,6 +60,10 @@ const FirstPersonScene: React.FC = () => {
   useEffect(() => {
     // Initialize socket connection
     initialize();
+
+    // Initialize game state
+    useGameStateStore.getState().initialize();
+
     setIsInitialized(true);
 
     // Clean up socket connection when component unmounts
@@ -137,6 +143,7 @@ const FirstPersonScene: React.FC = () => {
       <CubeCounter />
       <PlayerNameInput onNameSubmit={handleNameSubmit} />
       <PositionBar />
+      <GameStateUI />
       {/* Show cursor debug UI if debug mode is on */}
       {debugModeEnabled && <CursorDebug {...debugData} />}
 

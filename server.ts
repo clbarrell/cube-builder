@@ -19,7 +19,10 @@ app.use(cors());
 // Initialize Socket.io with CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: "https://cube-builder.onrender.com", // In production, restrict this to your domain
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://cube-builder.onrender.com"
+        : "*", // Use wildcard in dev, restrict in production
     methods: ["GET", "POST"],
   },
 });
@@ -95,20 +98,42 @@ interface Cube {
   playerName: string;
 }
 
+// Define game phases
+enum GamePhase {
+  LOBBY = "LOBBY",
+  ACTIVE = "ACTIVE",
+  FINISHED = "FINISHED",
+}
+
 interface GameState {
   players: Record<string, Player>;
   cubes: Cube[];
+  gamePhase: GamePhase;
+  timer: {
+    startTime: number | null;
+    duration: number | null;
+    endTime: number | null;
+  };
 }
 
 // Game state
 const gameState: GameState = {
   players: {},
   cubes: [],
+  gamePhase: GamePhase.LOBBY,
+  timer: {
+    startTime: null,
+    duration: null,
+    endTime: null,
+  },
 };
 
 // Map to track name to socket ID
 const nameToSocketId: Record<string, string> = {};
 const socketIdToName: Record<string, string> = {};
+
+// Timer interval reference
+let timerInterval: NodeJS.Timeout | null = null;
 
 // Command response interface
 interface CommandResponse {
@@ -198,6 +223,14 @@ io.on("connection", (socket) => {
       return;
     }
 
+    // Check if game is in active state
+    if (gameState.gamePhase !== GamePhase.ACTIVE) {
+      socket.emit("server:command:error", {
+        message: "Cannot add cubes outside of active game",
+      });
+      return;
+    }
+
     const { position, playerName } = data;
     const currentPlayerName = socketIdToName[socket.id];
 
@@ -248,6 +281,14 @@ io.on("connection", (socket) => {
     // Check if data is valid
     if (!data || !data.position) {
       console.error("Invalid cube:remove data:", data);
+      return;
+    }
+
+    // Check if game is in active state
+    if (gameState.gamePhase !== GamePhase.ACTIVE) {
+      socket.emit("server:command:error", {
+        message: "Cannot remove cubes outside of active game",
+      });
       return;
     }
 
@@ -359,10 +400,18 @@ function processCommand(command: string, socketId: string): CommandResponse {
       // Check if player has permission (could implement admin roles later)
       return resetCubes();
 
+    case "startgame":
+      return startGame();
+
+    case "timer": {
+      const minutes = parseFloat(parts[1]);
+      return startTimer(minutes);
+    }
+
     case "help":
       return {
         success: true,
-        message: "Available commands: reset, help",
+        message: "Available commands: reset, startgame, timer <minutes>, help",
       };
 
     default:
@@ -373,26 +422,137 @@ function processCommand(command: string, socketId: string): CommandResponse {
   }
 }
 
+// Function to start the game
+function startGame(): CommandResponse {
+  if (gameState.gamePhase === GamePhase.ACTIVE) {
+    return {
+      success: false,
+      message: "Game is already active",
+    };
+  }
+
+  // Set game phase to ACTIVE
+  gameState.gamePhase = GamePhase.ACTIVE;
+
+  // Broadcast game state change
+  io.emit("game:state:change", { phase: gameState.gamePhase });
+
+  return {
+    success: true,
+    message: "Game started",
+  };
+}
+
+// Function to start a timer
+function startTimer(minutes: number): CommandResponse {
+  if (isNaN(minutes) || minutes <= 0) {
+    return {
+      success: false,
+      message: "Invalid time. Usage: timer <minutes>",
+    };
+  }
+
+  if (gameState.gamePhase === GamePhase.ACTIVE) {
+    return {
+      success: false,
+      message: "Game is already active",
+    };
+  }
+
+  // Clear existing timer if any
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  // Set timer properties
+  const now = Date.now();
+  const durationMs = minutes * 60 * 1000;
+
+  gameState.timer = {
+    startTime: now,
+    duration: durationMs,
+    endTime: now + durationMs,
+  };
+
+  // Set game phase to ACTIVE
+  gameState.gamePhase = GamePhase.ACTIVE;
+
+  // Broadcast game state and timer
+  io.emit("game:state:change", { phase: gameState.gamePhase });
+  io.emit("timer:update", gameState.timer);
+
+  // Start timer interval
+  timerInterval = setInterval(() => {
+    const now = Date.now();
+    const timeLeft = (gameState.timer.endTime || 0) - now;
+
+    if (timeLeft <= 0) {
+      // Timer ended
+      clearInterval(timerInterval as NodeJS.Timeout);
+      timerInterval = null;
+
+      // Set game phase to FINISHED
+      gameState.gamePhase = GamePhase.FINISHED;
+
+      // Broadcast game state change and timer end
+      io.emit("game:state:change", { phase: gameState.gamePhase });
+      io.emit("timer:end");
+
+      // Reset timer
+      gameState.timer = {
+        startTime: null,
+        duration: null,
+        endTime: null,
+      };
+    } else {
+      // Broadcast timer update every second
+      io.emit("timer:update", {
+        timeLeft,
+        endTime: gameState.timer.endTime,
+      });
+    }
+  }, 1000);
+
+  return {
+    success: true,
+    message: `Timer started for ${minutes} minute${minutes === 1 ? "" : "s"}`,
+  };
+}
+
 // Reset all cubes in the game
 function resetCubes(): CommandResponse {
   const cubeCount = gameState.cubes.length;
 
-  if (cubeCount === 0) {
-    return {
-      success: true,
-      message: "No cubes to reset.",
-    };
-  }
-
   // Clear all cubes
   gameState.cubes = [];
 
-  // Broadcast cube reset to all clients
+  // Reset game state to LOBBY
+  gameState.gamePhase = GamePhase.LOBBY;
+
+  // Clear timer if active
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  // Reset timer
+  gameState.timer = {
+    startTime: null,
+    duration: null,
+    endTime: null,
+  };
+
+  // Broadcast cube reset and game state change
   io.emit("cubes:reset");
+  io.emit("game:state:change", { phase: gameState.gamePhase });
+  io.emit("timer:end");
 
   return {
     success: true,
-    message: `Reset ${cubeCount} cube${cubeCount === 1 ? "" : "s"}.`,
+    message: `Reset ${cubeCount} cube${
+      cubeCount === 1 ? "" : "s"
+    } and returned to lobby.`,
   };
 }
 

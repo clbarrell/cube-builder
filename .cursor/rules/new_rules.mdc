@@ -1,0 +1,10 @@
+---
+description: Helps create new rules
+globs: 
+alwaysApply: true
+---
+When you have completed a significant piece of functionality and it is working, try to create a new Cursor Rule for that area/capability, so future generation can be more accurate and informed.
+
+Use the [rule-for-fules.mdc](mdc:.cursor/rules/rule-for-fules.mdc) instructions.
+
+For example, if you introduce new functionality around server commands. That can be entered in debug mdoe, and run on the server. There should be a new rule to describe how to work with that capability.

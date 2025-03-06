@@ -29,6 +29,12 @@ export interface Cube {
 export interface GameState {
   players: Record<string, Player>;
   cubes: Cube[];
+  gamePhase?: string;
+  timer?: {
+    startTime: number | null;
+    duration: number | null;
+    endTime: number | null;
+  };
 }
 
 // Command response interface
@@ -274,8 +280,11 @@ export const disconnect = (): void => {
 };
 
 // Safe event listener registration
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const safeOn = (event: string, callback: (...args: any[]) => void): void => {
+export const safeOn = (
+  event: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  callback: (...args: any[]) => void
+): void => {
   const socketInstance = getSocket();
   if (!socketInstance) return;
 
@@ -330,18 +339,40 @@ export const onCubesReset = (callback: () => void): void => {
   safeOn("cubes:reset", callback);
 };
 
+// Game state events
+export const onGameStateChange = (
+  callback: (data: { phase: string }) => void
+): void => {
+  safeOn("game:state:change", callback);
+};
+
+export const onTimerUpdate = (
+  callback: (data: { timeLeft?: number; endTime?: number }) => void
+): void => {
+  safeOn("timer:update", callback);
+};
+
+export const onTimerEnd = (callback: () => void): void => {
+  safeOn("timer:end", callback);
+};
+
 // Clean up event listeners
 export const offAllEvents = (): void => {
   if (socket) {
     socket.off("player:join");
     socket.off("player:leave");
     socket.off("player:move");
+    socket.off("player:name:modified");
     socket.off("state:sync");
     socket.off("cube:add");
     socket.off("cube:remove");
     socket.off("cubes:reset");
     socket.off("server:command:response");
-    socket.off("server:command:error");
+
+    // New events
+    socket.off("game:state:change");
+    socket.off("timer:update");
+    socket.off("timer:end");
   }
 };
 
