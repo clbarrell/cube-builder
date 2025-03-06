@@ -32,7 +32,7 @@ interface PlayerState {
     position: Vector3,
     rotation: { x: number; y: number }
   ) => void;
-  setLocalPlayer: (id: string, name: string) => void;
+  setLocalPlayer: (name: string) => void;
   cleanup: () => void;
 
   // Getters
@@ -241,7 +241,7 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   },
 
   // Set local player ID and name
-  setLocalPlayer: (id, name) => {
+  setLocalPlayer: (name) => {
     set({
       localPlayerId: name, // Use name as ID, not socket.id
       localPlayerName: name,

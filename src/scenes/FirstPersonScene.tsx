@@ -99,7 +99,7 @@ const FirstPersonScene: React.FC = () => {
         const socket = getSocket();
         if (socket?.id) {
           console.log("Socket connected. Setting local player.");
-          setLocalPlayer(socket.id, name);
+          setLocalPlayer(name);
         } else {
           // Use non-error logging since this will be retried automatically
           console.log("Waiting for socket connection...");
@@ -108,7 +108,7 @@ const FirstPersonScene: React.FC = () => {
           setTimeout(() => {
             const retrySocket = getSocket();
             if (retrySocket?.id) {
-              setLocalPlayer(retrySocket.id, name);
+              setLocalPlayer(name);
             } else {
               console.error("Socket connection failed after retry");
             }
