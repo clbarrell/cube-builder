@@ -24,9 +24,21 @@ const io = new Server(server, {
   },
 });
 
+express.static.mime.define({
+  "application/javascript": ["js", "mjs"],
+  "text/css": ["css"],
+  "text/html": ["html", "htm"],
+});
+
 // Set correct MIME types for JavaScript modules
 app.use((req, res, next) => {
-  if (req.url.endsWith(".js")) {
+  console.log(`Request for: ${req.url}`);
+  if (
+    req.url.endsWith(".js") ||
+    req.url.includes("?v=") ||
+    req.url.includes("?module") ||
+    req.url.includes("?import")
+  ) {
     res.type("application/javascript");
   } else if (req.url.endsWith(".mjs")) {
     res.type("application/javascript");
