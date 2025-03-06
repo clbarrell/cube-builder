@@ -19,13 +19,19 @@ app.use(cors());
 // Initialize Socket.io with CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: "*", // In production, restrict this to your domain
+    origin: "https://cube-builder.onrender.com", // In production, restrict this to your domain
     methods: ["GET", "POST"],
   },
 });
 
-// Serve static files in production
-app.use(express.static(path.join(__dirname, "dist")));
+// Serve static files from the Vite build
+app.use(express.static(path.join(__dirname, "..")));
+
+// For any request that doesn't match a static file or API route
+// send the index.html file (for SPA routing)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../index.html"));
+});
 
 // Define types for game state
 interface Player {
