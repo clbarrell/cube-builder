@@ -27,11 +27,11 @@ const io = new Server(server, {
 // Set correct MIME types for JavaScript modules
 app.use((req, res, next) => {
   if (req.url.endsWith(".js")) {
-    res.setHeader("Content-Type", "application/javascript");
+    res.type("application/javascript");
   } else if (req.url.endsWith(".mjs")) {
-    res.setHeader("Content-Type", "application/javascript");
+    res.type("application/javascript");
   } else if (req.url.endsWith(".css")) {
-    res.setHeader("Content-Type", "text/css");
+    res.type("text/css");
   }
   next();
 });
@@ -42,11 +42,11 @@ app.use(
     // Set proper MIME types for common file extensions
     setHeaders: (res, filePath) => {
       if (filePath.endsWith(".js")) {
-        res.setHeader("Content-Type", "application/javascript");
+        res.type("application/javascript");
       } else if (filePath.endsWith(".mjs")) {
-        res.setHeader("Content-Type", "application/javascript");
+        res.type("application/javascript");
       } else if (filePath.endsWith(".css")) {
-        res.setHeader("Content-Type", "text/css");
+        res.type("text/css");
       }
     },
   })
