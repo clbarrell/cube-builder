@@ -5,8 +5,12 @@ const Crosshair: React.FC = () => {
   const hasReachedLimit = useCubeStore((state) => state.hasReachedLimit());
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-      <div className="relative w-5 h-5">
+    <div className="fixed inset-0 flex items-center transition-all duration-300 justify-center pointer-events-none">
+      <div
+        className={`relative w-5 h-5 ${
+          hasReachedLimit && "transform rotate-45"
+        }`}
+      >
         {/* Horizontal line */}
         <div
           className={`absolute top-1/2 left-0 w-full h-0.5 opacity-50 -translate-y-1/2 ${
