@@ -5,6 +5,7 @@ import { useCubeStore } from "../../game/state/CubeState";
 import { usePlayerStore } from "../../game/state/PlayerState";
 import { useKeyPress } from "../../hooks/useKeyPress";
 import { useDebugStore } from "../../game/state/DebugState";
+import { useGameStateStore } from "../../game/state/GameStateStore";
 
 const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
@@ -14,6 +15,8 @@ const CubePlacementPreview: React.FC = () => {
   const getCubeAtPosition = useCubeStore((state) => state.getCubeAtPosition);
   const localPlayerId = usePlayerStore((state) => state.localPlayerId);
   const debugModeEnabled = useDebugStore((state) => state.debugModeEnabled);
+  // Get the ability to modify cubes from the GameStateStore
+  const canModifyCubes = useGameStateStore((state) => state.canModifyCubes());
 
   // Track control key press for removal mode
   const isControlLeftPressed = useKeyPress("ControlLeft");
@@ -131,7 +134,7 @@ const CubePlacementPreview: React.FC = () => {
 
   // Update cursor style based on mode
   useEffect(() => {
-    if (isRemovalMode) {
+    if (isRemovalMode && canModifyCubes) {
       document.body.style.cursor = hoverRemovableCube
         ? "pointer"
         : "not-allowed";
@@ -142,10 +145,21 @@ const CubePlacementPreview: React.FC = () => {
     return () => {
       document.body.style.cursor = "default";
     };
-  }, [isRemovalMode, hoverRemovableCube, isControlPressed]);
+  }, [isRemovalMode, hoverRemovableCube, isControlPressed, canModifyCubes]);
 
   // Main update loop
   useFrame(() => {
+    // Skip processing if game is not in ACTIVE phase
+    if (!canModifyCubes) {
+      // Clear all preview states when not in active phase
+      setCursorPosition(null);
+      setPreviewPosition(null);
+      setPlacementPosition(null);
+      setIsValidPlacement(false);
+      setHoverRemovableCube(null);
+      return;
+    }
+
     // Throttle updates to reduce flickering
     const now = Date.now();
     if (now - lastUpdateTime.current < updateCooldown) {
@@ -272,8 +286,8 @@ const CubePlacementPreview: React.FC = () => {
   // Handle control+click to remove cube
   useEffect(() => {
     const handleControlClick = (e: MouseEvent) => {
-      // Only handle control+click
-      if (e.ctrlKey && e.button === 0) {
+      // Only handle control+click and only when game is active
+      if (e.ctrlKey && e.button === 0 && canModifyCubes) {
         console.log("Control+click detected");
 
         // Prevent default to avoid other click handlers
@@ -298,13 +312,13 @@ const CubePlacementPreview: React.FC = () => {
     return () => {
       window.removeEventListener("click", handleControlClick, true);
     };
-  }, [hoverRemovableCube, removeCube]);
+  }, [hoverRemovableCube, removeCube, canModifyCubes]);
 
   // Handle regular click to place cube
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      // Only handle regular clicks (not control+click)
-      if (!e.ctrlKey && e.button === 0) {
+      // Only handle regular clicks (not control+click) and only when game is active
+      if (!e.ctrlKey && e.button === 0 && canModifyCubes) {
         if (previewPosition && isValidPlacement && !hasReachedLimit()) {
           // Normal left-click to place a cube
           addCube(previewPosition);
@@ -317,27 +331,36 @@ const CubePlacementPreview: React.FC = () => {
     return () => {
       window.removeEventListener("click", handleClick);
     };
-  }, [previewPosition, isValidPlacement, addCube, hasReachedLimit]);
+  }, [
+    previewPosition,
+    isValidPlacement,
+    addCube,
+    hasReachedLimit,
+    canModifyCubes,
+  ]);
 
   return (
     <>
-      {/* Render the preview cube (only in placement mode) */}
-      {previewPosition && !isRemovalMode && !hasReachedLimit() && (
-        <mesh
-          ref={previewMeshRef}
-          position={[previewPosition.x, previewPosition.y, previewPosition.z]}
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial
-            color={isValidPlacement ? "green" : "red"}
-            transparent={true}
-            opacity={0.5}
-          />
-        </mesh>
-      )}
+      {/* Render the preview cube (only in placement mode and when game is active) */}
+      {previewPosition &&
+        !isRemovalMode &&
+        !hasReachedLimit() &&
+        canModifyCubes && (
+          <mesh
+            ref={previewMeshRef}
+            position={[previewPosition.x, previewPosition.y, previewPosition.z]}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial
+              color={isValidPlacement ? "green" : "red"}
+              transparent={true}
+              opacity={0.5}
+            />
+          </mesh>
+        )}
 
-      {/* Render the removal indicator (only in removal mode) */}
-      {hoverRemovableCube && isRemovalMode && (
+      {/* Render the removal indicator (only in removal mode and when game is active) */}
+      {hoverRemovableCube && isRemovalMode && canModifyCubes && (
         <mesh
           ref={removalIndicatorRef}
           position={[

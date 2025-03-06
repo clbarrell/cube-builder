@@ -98,7 +98,7 @@ export const useGameStateStore = create<GameStateStore>()((set, get) => ({
               timer: {
                 ...currentState.timer,
                 ...state.timer,
-                timeLeft: state.timer.endTime
+                timeLeft: state.timer?.endTime
                   ? state.timer.endTime - Date.now()
                   : null,
               },

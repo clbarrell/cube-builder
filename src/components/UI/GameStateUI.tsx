@@ -3,23 +3,15 @@ import { useGameStateStore, GamePhase } from "../../game/state/GameStateStore";
 
 const GameStateUI: React.FC = () => {
   const gamePhase = useGameStateStore((state) => state.gamePhase);
-  const getFormattedTimeLeft = useGameStateStore(
-    (state) => state.getFormattedTimeLeft
-  );
-  const timer = useGameStateStore((state) => state.timer);
 
   const getStateMessage = () => {
     switch (gamePhase) {
       case GamePhase.LOBBY:
-        return "Waiting in lobby. Use 'startgame' or 'timer <minutes>' to begin.";
+        return "Waiting in lobby.";
       case GamePhase.ACTIVE:
-        if (timer.endTime !== null) {
-          return `Game in progress! Time remaining: ${getFormattedTimeLeft()}`;
-        } else {
-          return "Game in progress! No time limit.";
-        }
+        return "";
       case GamePhase.FINISHED:
-        return "Game over! Use 'reset' to return to lobby.";
+        return "Game finished!";
       default:
         return "";
     }
@@ -39,7 +31,11 @@ const GameStateUI: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-black/70 text-white py-2 px-4 rounded-md font-mono text-sm z-50 flex flex-row gap-3 items-center justify-center">
+    <div
+      className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-black/70 text-white py-2 px-4 rounded-md font-mono text-sm z-50 flex flex-row gap-3 items-center justify-center ${
+        gamePhase === GamePhase.ACTIVE && "hidden"
+      }`}
+    >
       <div className={`font-bold ${getStateColor()}`}>{gamePhase}</div>
       <div className="text-xs mt-1">{getStateMessage()}</div>
     </div>
