@@ -8,7 +8,7 @@
     "server": "tsx server.ts",
     "dev:all": "concurrently \"pnpm run dev\" \"pnpm run server\"",
     "build": "tsc -b && vite build",
-    "build:server": "tsc -p tsconfig.server.json --outDir dist",
+    "build:server": "NODE_ENV=production tsc -p tsconfig.server.json --outDir dist",
     "start": "node dist/server.js",
     "start:network": "tsx start-network.ts",
     "lint": "eslint .",

@@ -9,6 +9,8 @@ import cors from "cors";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+process.env.NODE_ENV = process.env.NODE_ENV || "production";
+
 // Initialize Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
@@ -51,26 +53,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from the Vite build
-app.use(
-  express.static(path.join(__dirname, ".."), {
-    // Set proper MIME types for common file extensions
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith(".js")) {
-        res.type("application/javascript");
-      } else if (filePath.endsWith(".mjs")) {
-        res.type("application/javascript");
-      } else if (filePath.endsWith(".css")) {
-        res.type("text/css");
-      }
-    },
-  })
-);
+// Serve static files from the Vite build output directory
+app.use(express.static(path.join(__dirname, "../dist")));
 
-// For any request that doesn't match a static file or API route
-// send the index.html file (for SPA routing)
+// Fallback route for SPA
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../index.html"));
+  res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
 // Define types for game state
