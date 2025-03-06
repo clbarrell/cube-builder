@@ -13,6 +13,7 @@ import CursorDebug from "../components/UI/CursorDebug";
 import { useDebugStore } from "../game/state/DebugState";
 import { useShallow } from "zustand/react/shallow";
 import PositionBar from "../components/UI/PositionBar";
+import ServerCommandBar from "../components/UI/ServerCommandBar";
 
 const CanvasFallback = () => (
   <div className="w-full h-full flex items-center justify-center bg-gray-800">
@@ -140,11 +141,7 @@ const FirstPersonScene: React.FC = () => {
       {debugModeEnabled && <CursorDebug {...debugData} />}
 
       {/* Debug toggle indicator */}
-      {debugModeEnabled && (
-        <div className="fixed bottom-4 right-4 bg-black/70 text-white py-2 px-3 rounded-md font-mono text-xs z-50">
-          Debug Mode: ON (Press - to toggle)
-        </div>
-      )}
+      {debugModeEnabled && <ServerCommandBar />}
     </div>
   );
 };

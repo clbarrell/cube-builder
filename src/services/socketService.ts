@@ -31,6 +31,12 @@ export interface GameState {
   cubes: Cube[];
 }
 
+// Command response interface
+export interface CommandResponse {
+  success: boolean;
+  message: string;
+}
+
 // Socket.io client instance
 let socket: Socket | null = null;
 let localPlayerName: string | null = null;
@@ -320,6 +326,10 @@ export const onCubeRemove = (
   safeOn("cube:remove", callback);
 };
 
+export const onCubesReset = (callback: () => void): void => {
+  safeOn("cubes:reset", callback);
+};
+
 // Clean up event listeners
 export const offAllEvents = (): void => {
   if (socket) {
@@ -329,6 +339,9 @@ export const offAllEvents = (): void => {
     socket.off("state:sync");
     socket.off("cube:add");
     socket.off("cube:remove");
+    socket.off("cubes:reset");
+    socket.off("server:command:response");
+    socket.off("server:command:error");
   }
 };
 
@@ -349,4 +362,63 @@ export const safeEmit = <T extends Record<string, unknown>>(
   } catch (error) {
     console.error(`Error emitting ${event}:`, error);
   }
+};
+
+// Execute server command
+export const executeCommand = async (
+  command: string
+): Promise<CommandResponse> => {
+  try {
+    // Ensure socket is connected before sending command
+    const socket = await ensureSocketConnected();
+
+    return new Promise((resolve, reject) => {
+      // Set up response handler
+      const responseHandler = (response: CommandResponse) => {
+        socket.off("server:command:response", responseHandler);
+        if (response.success) {
+          resolve(response);
+        } else {
+          reject(new Error(response.message));
+        }
+      };
+
+      // Set up error handler
+      const errorHandler = (error: { message: string }) => {
+        socket.off("server:command:error", errorHandler);
+        reject(new Error(error.message));
+      };
+
+      // Set timeout for response
+      const timeout = setTimeout(() => {
+        socket.off("server:command:response", responseHandler);
+        socket.off("server:command:error", errorHandler);
+        reject(new Error("Command timed out"));
+      }, 5000);
+
+      // Register handlers
+      socket.once("server:command:response", (response) => {
+        clearTimeout(timeout);
+        responseHandler(response);
+      });
+
+      socket.once("server:command:error", (error) => {
+        clearTimeout(timeout);
+        errorHandler(error);
+      });
+
+      // Send the command
+      safeEmit("server:command", { command });
+    });
+  } catch (error) {
+    console.error("Failed to execute command:", error);
+    throw error;
+  }
+};
+
+// Listen for command responses
+export const onCommandResponse = (
+  callback: (response: CommandResponse) => void
+): void => {
+  safeOn("server:command:response", callback);
 };

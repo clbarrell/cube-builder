@@ -67,6 +67,12 @@ const gameState: GameState = {
 const nameToSocketId: Record<string, string> = {};
 const socketIdToName: Record<string, string> = {};
 
+// Command response interface
+interface CommandResponse {
+  success: boolean;
+  message: string;
+}
+
 // Socket.io event handlers
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
@@ -241,6 +247,29 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Handle server commands
+  socket.on("server:command", (data) => {
+    if (!data || !data.command) {
+      socket.emit("server:command:error", {
+        message: "Invalid command format",
+      });
+      return;
+    }
+
+    const { command } = data;
+    console.log(`Received command from ${socket.id}: ${command}`);
+
+    // Process commands
+    try {
+      const response = processCommand(command, socket.id);
+      socket.emit("server:command:response", response);
+    } catch (error) {
+      socket.emit("server:command:error", {
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
   // Handle disconnection
   socket.on("disconnect", () => {
     const playerName = socketIdToName[socket.id];
@@ -266,6 +295,63 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+// Process server commands
+function processCommand(command: string, socketId: string): CommandResponse {
+  const parts = command.trim().toLowerCase().split(/\s+/);
+  const cmd = parts[0];
+
+  // Get player name from socket ID
+  const playerName = socketIdToName[socketId];
+
+  if (!playerName) {
+    return {
+      success: false,
+      message: "You must be logged in to use commands",
+    };
+  }
+
+  switch (cmd) {
+    case "reset":
+      // Check if player has permission (could implement admin roles later)
+      return resetCubes();
+
+    case "help":
+      return {
+        success: true,
+        message: "Available commands: reset, help",
+      };
+
+    default:
+      return {
+        success: false,
+        message: `Unknown command: ${cmd}. Type 'help' for available commands.`,
+      };
+  }
+}
+
+// Reset all cubes in the game
+function resetCubes(): CommandResponse {
+  const cubeCount = gameState.cubes.length;
+
+  if (cubeCount === 0) {
+    return {
+      success: true,
+      message: "No cubes to reset.",
+    };
+  }
+
+  // Clear all cubes
+  gameState.cubes = [];
+
+  // Broadcast cube reset to all clients
+  io.emit("cubes:reset");
+
+  return {
+    success: true,
+    message: `Reset ${cubeCount} cube${cubeCount === 1 ? "" : "s"}.`,
+  };
+}
 
 // Start server
 const PORT = process.env.PORT || 3001;

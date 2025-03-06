@@ -26,6 +26,20 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
       setIsVisible(false);
     }
   };
+  // Handle Enter key press to submit the form
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Enter" && isVisible && name.trim()) {
+        onNameSubmit(name.trim());
+        setIsVisible(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isVisible, name, onNameSubmit]);
 
   if (!isVisible) return null;
 

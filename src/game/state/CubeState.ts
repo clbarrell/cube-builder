@@ -5,6 +5,7 @@ import {
   onStateSync,
   onCubeAdd,
   onCubeRemove,
+  onCubesReset,
   ensureSocketConnected,
   addCube as addCubeService,
   removeCube as removeCubeService,
@@ -198,5 +199,11 @@ export const initializeCubeSocketListeners = () => {
               c.position.z !== position.z
           )
       );
+  });
+
+  // Listen for cubes:reset events
+  onCubesReset(() => {
+    console.log("Received cubes:reset event");
+    useCubeStore.getState().syncCubes([]);
   });
 };

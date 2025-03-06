@@ -1,0 +1,238 @@
+---
+description: Standards for implementing and extending server commands in the cube-builder application.
+globs: src/services/socketService.ts, server.ts
+alwaysApply: false
+---
+
+<rule>
+name: server_commands
+description: Guidelines for implementing server commands in the cube-builder application
+
+## Server Command System Overview
+
+This rule describes how to properly implement new server commands in the cube-builder application.
+
+### Key Components
+
+1. **Server-Side Command Processing**
+   - All commands are processed in the `processCommand` function in `server.ts`
+   - Commands follow a consistent pattern for validation and execution
+   - Command responses use the `CommandResponse` interface
+
+2. **Client-Side Command Execution**
+   - Commands are sent to the server using the `executeCommand` function in `socketService.ts`
+   - The ServerCommandBar component provides the user interface for entering commands
+
+3. **Event Broadcasting**
+   - Commands that affect game state broadcast events to all connected clients
+   - Client components listen for these events to update their local state
+
+### Implementation Guidelines
+
+#### Adding a New Command
+
+To add a new command to the system:
+
+1. **Update the `processCommand` function in `server.ts`**:
+```typescript
+function processCommand(command: string, socketId: string): CommandResponse {
+  const parts = command.trim().toLowerCase().split(/\s+/);
+  const cmd = parts[0];
+  
+  // Get player name from socket ID
+  const playerName = socketIdToName[socketId];
+  
+  if (!playerName) {
+    return {
+      success: false,
+      message: "You must be logged in to use commands"
+    };
+  }
+  
+  switch (cmd) {
+    case "reset":
+      return resetCubes();
+      
+    // Add your new command case here
+    case "your-command":
+      // Extract arguments if needed
+      const arg1 = parts[1];
+      const arg2 = parts[2];
+      return yourCommandFunction(arg1, arg2);
+      
+    case "help":
+      // Update help text to include your new command
+      return {
+        success: true,
+        message: "Available commands: reset, your-command, help"
+      };
+      
+    default:
+      return {
+        success: false,
+        message: `Unknown command: ${cmd}. Type 'help' for available commands.`
+      };
+  }
+}
+```
+
+2. **Implement the command function in `server.ts`**:
+```typescript
+function yourCommandFunction(arg1: string, arg2: string): CommandResponse {
+  // Validate arguments
+  if (!arg1 || !arg2) {
+    return {
+      success: false,
+      message: "Missing required arguments. Usage: your-command <arg1> <arg2>"
+    };
+  }
+  
+  try {
+    // Implement command logic
+    // ...
+    
+    // Broadcast changes to clients if needed
+    io.emit("your-command:event", { /* data */ });
+    
+    return {
+      success: true,
+      message: "Command executed successfully"
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+```
+
+3. **Add event listener in `socketService.ts`**:
+```typescript
+export const onYourCommandEvent = (callback: (data: YourEventData) => void): void => {
+  safeOn("your-command:event", callback);
+};
+
+// Update offAllEvents to include your new event
+export const offAllEvents = (): void => {
+  if (socket) {
+    // Existing events...
+    socket.off("your-command:event");
+  }
+};
+```
+
+4. **Update client-side state management**:
+```typescript
+// In the appropriate state file (e.g., CubeState.ts)
+import { onYourCommandEvent } from "../../services/socketService";
+
+export const initializeSocketListeners = () => {
+  // Existing listeners...
+  
+  // Listen for your command events
+  onYourCommandEvent((data) => {
+    // Update client state based on the event
+    // ...
+  });
+};
+```
+
+### Command Design Principles
+
+1. **Validation First**
+   - Always validate command arguments before execution
+   - Return clear error messages for invalid commands
+
+2. **Atomic Operations**
+   - Commands should be atomic - either fully succeed or fully fail
+   - Handle errors gracefully and provide meaningful feedback
+
+3. **Permission Checking**
+   - Check if the player has permission to execute the command
+   - Consider implementing admin roles for privileged commands
+
+4. **Consistent Response Format**
+   - Always use the CommandResponse interface for responses
+   - Include success/failure status and a descriptive message
+
+5. **Broadcast Changes**
+   - If a command changes game state, broadcast the changes to all clients
+   - Use specific event types for different kinds of changes
+
+### Example: Adding a "teleport" Command
+
+```typescript
+// In server.ts
+case "teleport":
+  const targetX = parseFloat(parts[1]);
+  const targetY = parseFloat(parts[2]);
+  const targetZ = parseFloat(parts[3]);
+  return teleportPlayer(socketId, targetX, targetY, targetZ);
+
+function teleportPlayer(socketId: string, x: number, y: number, z: number): CommandResponse {
+  // Validate coordinates
+  if (isNaN(x) || isNaN(y) || isNaN(z)) {
+    return {
+      success: false,
+      message: "Invalid coordinates. Usage: teleport <x> <y> <z>"
+    };
+  }
+  
+  const playerName = socketIdToName[socketId];
+  if (!playerName || !gameState.players[playerName]) {
+    return {
+      success: false,
+      message: "Player not found"
+    };
+  }
+  
+  // Update player position
+  gameState.players[playerName].position = { x, y, z };
+  
+  // Broadcast the teleport to all clients
+  io.emit("player:teleport", {
+    id: playerName,
+    position: { x, y, z }
+  });
+  
+  return {
+    success: true,
+    message: `Teleported to (${x}, ${y}, ${z})`
+  };
+}
+
+// In socketService.ts
+export const onPlayerTeleport = (
+  callback: (data: { id: string; position: { x: number; y: number; z: number } }) => void
+): void => {
+  safeOn("player:teleport", callback);
+};
+
+// In PlayerState.ts
+onPlayerTeleport((data) => {
+  // Update player position in client state
+  if (data.id === usePlayerStore.getState().localPlayerId) {
+    // Update local player position
+    // ...
+  } else {
+    // Update other player position
+    // ...
+  }
+});
+```
+
+### Troubleshooting
+
+If commands aren't working:
+
+1. Check server logs for errors in command processing
+2. Verify that the command is being sent to the server correctly
+3. Ensure event listeners are properly registered on the client
+4. Check that the command is properly formatted and arguments are valid
+5. Verify that the player has permission to execute the command
+
+metadata:
+  priority: medium
+  version: 1.0
+</rule> 
