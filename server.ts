@@ -24,8 +24,33 @@ const io = new Server(server, {
   },
 });
 
+// Set correct MIME types for JavaScript modules
+app.use((req, res, next) => {
+  if (req.url.endsWith(".js")) {
+    res.setHeader("Content-Type", "application/javascript");
+  } else if (req.url.endsWith(".mjs")) {
+    res.setHeader("Content-Type", "application/javascript");
+  } else if (req.url.endsWith(".css")) {
+    res.setHeader("Content-Type", "text/css");
+  }
+  next();
+});
+
 // Serve static files from the Vite build
-app.use(express.static(path.join(__dirname, "..")));
+app.use(
+  express.static(path.join(__dirname, ".."), {
+    // Set proper MIME types for common file extensions
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".js")) {
+        res.setHeader("Content-Type", "application/javascript");
+      } else if (filePath.endsWith(".mjs")) {
+        res.setHeader("Content-Type", "application/javascript");
+      } else if (filePath.endsWith(".css")) {
+        res.setHeader("Content-Type", "text/css");
+      }
+    },
+  })
+);
 
 // For any request that doesn't match a static file or API route
 // send the index.html file (for SPA routing)
