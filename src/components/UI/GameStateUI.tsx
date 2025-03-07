@@ -32,12 +32,12 @@ const GameStateUI: React.FC = () => {
 
   return (
     <div
-      className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-black/70 text-white py-2 px-4 rounded-md font-mono text-sm z-50 flex flex-row gap-3 items-center justify-center ${
+      className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-black/70 text-white py-2 px-4 rounded-t-md font-mono text-xs z-50 flex flex-row gap-3 items-center justify-center ${
         gamePhase === GamePhase.ACTIVE && "hidden"
       }`}
     >
       <div className={`font-bold ${getStateColor()}`}>{gamePhase}</div>
-      <div className="text-xs mt-1">{getStateMessage()}</div>
+      <div>{getStateMessage()}</div>
     </div>
   );
 };
