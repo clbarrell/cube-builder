@@ -1,10 +1,9 @@
 import React from "react";
 import { Text } from "@react-three/drei";
 
+export const floorSizeWidth = 50;
+export const floorSizeHeight = 50;
 const Floor: React.FC = () => {
-  const floorSizeWidth = 50;
-  const floorSizeHeight = 50;
-
   // Generate coordinate labels
   const coordinateLabels = [];
   const step = 5; // Place a label every 5 units

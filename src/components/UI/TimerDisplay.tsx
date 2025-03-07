@@ -3,6 +3,8 @@ import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useGameStateStore, GamePhase } from "../../game/state/GameStateStore";
 import { Color } from "three";
+import { floorSizeHeight } from "../environment/Floor";
+import { floorSizeWidth } from "../environment/Floor";
 
 const TimerDisplay: React.FC = () => {
   const getFormattedTimeLeft = useGameStateStore(
@@ -56,11 +58,11 @@ const TimerDisplay: React.FC = () => {
   };
 
   return (
-    <group position={[0, 10, 0]}>
+    <group position={[floorSizeWidth, 30, floorSizeHeight]}>
       <Text
         ref={textRef}
         position={[0, 0, 0]}
-        fontSize={5}
+        fontSize={18}
         color={getColor()}
         anchorX="center"
         anchorY="middle"
