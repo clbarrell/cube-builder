@@ -1,8 +1,8 @@
 import React from "react";
 import { Text } from "@react-three/drei";
 
-export const floorSizeWidth = 50;
-export const floorSizeHeight = 50;
+export const floorSizeWidth = 60;
+export const floorSizeHeight = 60;
 const Floor: React.FC = () => {
   // Generate coordinate labels
   const coordinateLabels = [];
@@ -58,7 +58,7 @@ const Floor: React.FC = () => {
         />
       </mesh>
       <gridHelper
-        args={[floorSizeWidth, floorSizeHeight, "#888888", "#444444"]}
+        args={[floorSizeWidth, floorSizeHeight, "#666666", "#444444"]}
         position={[0, 0.01, 0]}
         rotation={[0, 0, 0]}
       />
