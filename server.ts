@@ -9,8 +9,6 @@ import cors from "cors";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-process.env.NODE_ENV = process.env.NODE_ENV || "production";
-
 // Initialize Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +32,8 @@ express.static.mime.define({
   "text/css": ["css"],
   "text/html": ["html", "htm"],
 });
+
+console.log("NODE ENV", process.env.NODE_ENV);
 
 // Set correct MIME types for JavaScript modules
 app.use((req, res, next) => {

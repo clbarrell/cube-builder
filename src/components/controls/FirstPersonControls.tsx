@@ -139,6 +139,41 @@ const FirstPersonControls: React.FC = () => {
     return false;
   };
 
+  // Check if moving from current position to new position would move into a cube
+  const isMovingIntoCube = (
+    currentPos: THREE.Vector3,
+    newPos: THREE.Vector3
+  ) => {
+    // If we're not currently in a cube but the new position is in a cube, we're moving into a cube
+    if (!checkCubeCollision(currentPos) && checkCubeCollision(newPos)) {
+      return true;
+    }
+
+    // If we're in a cube, check if we're moving further into it or out of it
+    if (checkCubeCollision(currentPos)) {
+      // For each cube, check if we're moving closer to its center or further away
+      for (const cube of cubes) {
+        const cubeCenter = new THREE.Vector3(
+          cube.position.x,
+          cube.position.y,
+          cube.position.z
+        );
+
+        // Calculate distances from current and new positions to cube center
+        const currentDistance = currentPos.distanceTo(cubeCenter);
+        const newDistance = newPos.distanceTo(cubeCenter);
+
+        // If we're inside this cube and moving closer to its center, prevent movement
+        if (currentDistance < 0.866 && newDistance < currentDistance) {
+          // 0.866 = sqrt(3)/2 (half diagonal of a unit cube)
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
   // Emergency escape function to prevent getting stuck
   const tryEmergencyEscape = () => {
     // Try to move in all 6 directions to find an escape route
@@ -231,7 +266,7 @@ const FirstPersonControls: React.FC = () => {
     // Apply movement based on key states
     if (moveState.current.forward) {
       newPosition.add(frontVector);
-      if (checkCubeCollision(newPosition)) {
+      if (isMovingIntoCube(originalPosition, newPosition)) {
         newPosition.copy(originalPosition);
       } else {
         camera.position.copy(newPosition);
@@ -241,7 +276,7 @@ const FirstPersonControls: React.FC = () => {
     newPosition = camera.position.clone();
     if (moveState.current.backward) {
       newPosition.sub(frontVector);
-      if (checkCubeCollision(newPosition)) {
+      if (isMovingIntoCube(originalPosition, newPosition)) {
         newPosition.copy(originalPosition);
       } else {
         camera.position.copy(newPosition);
@@ -251,7 +286,7 @@ const FirstPersonControls: React.FC = () => {
     newPosition = camera.position.clone();
     if (moveState.current.left) {
       newPosition.sub(sideVector);
-      if (checkCubeCollision(newPosition)) {
+      if (isMovingIntoCube(originalPosition, newPosition)) {
         newPosition.copy(originalPosition);
       } else {
         camera.position.copy(newPosition);
@@ -261,7 +296,7 @@ const FirstPersonControls: React.FC = () => {
     newPosition = camera.position.clone();
     if (moveState.current.right) {
       newPosition.add(sideVector);
-      if (checkCubeCollision(newPosition)) {
+      if (isMovingIntoCube(originalPosition, newPosition)) {
         newPosition.copy(originalPosition);
       } else {
         camera.position.copy(newPosition);
@@ -271,7 +306,7 @@ const FirstPersonControls: React.FC = () => {
     newPosition = camera.position.clone();
     if (moveState.current.up) {
       newPosition.add(upVector.clone().multiplyScalar(speed.current));
-      if (checkCubeCollision(newPosition)) {
+      if (isMovingIntoCube(originalPosition, newPosition)) {
         newPosition.copy(originalPosition);
       } else {
         camera.position.copy(newPosition);
@@ -281,7 +316,7 @@ const FirstPersonControls: React.FC = () => {
     newPosition = camera.position.clone();
     if (moveState.current.down) {
       newPosition.sub(upVector.clone().multiplyScalar(speed.current));
-      if (checkCubeCollision(newPosition)) {
+      if (isMovingIntoCube(originalPosition, newPosition)) {
         newPosition.copy(originalPosition);
       } else {
         camera.position.copy(newPosition);

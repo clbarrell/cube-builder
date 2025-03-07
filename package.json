@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "server": "tsx server.ts",
+    "server": "NODE_ENV=development tsx server.ts",
     "dev:all": "concurrently \"pnpm run dev\" \"pnpm run server\"",
     "build": "tsc -b && vite build",
     "build:server": "NODE_ENV=production tsc -p tsconfig.server.json --outDir dist",
-    "start": "node dist/server.js",
+    "start": "NODE_ENV=production node dist/server.js",
     "start:network": "tsx start-network.ts",
     "lint": "eslint .",
     "preview": "vite preview"
