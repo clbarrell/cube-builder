@@ -54,8 +54,16 @@ React
 ```
 /Users/chrisbarrell/Code/cube-builder
 ├── README.md
+├── dist
+|  ├── assets
+|  |  ├── index-BYF8fwat.css
+|  |  └── index-CFpG8DRe.js
+|  ├── index.html
+|  ├── server.js
+|  └── vite.svg
 ├── docs
-|  └── multiplayer.md
+|  ├── multiplayer.md
+|  └── timer.md
 ├── eslint.config.js
 ├── index.html
 ├── package.json
@@ -71,6 +79,7 @@ React
 |  |  ├── react.svg
 |  |  ├── sounds
 |  |  └── textures
+|  |     └── skybox
 |  ├── components
 |  |  ├── ErrorBoundary.tsx
 |  |  ├── UI
@@ -78,13 +87,21 @@ React
 |  |  |  ├── Crosshair.tsx
 |  |  |  ├── CubeCounter.tsx
 |  |  |  ├── CubePositionDebug.tsx
+|  |  |  ├── CursorDebug.tsx
+|  |  |  ├── GameStateUI.tsx
 |  |  |  ├── PlayerCounter.tsx
-|  |  |  └── PlayerNameInput.tsx
+|  |  |  ├── PlayerNameInput.tsx
+|  |  |  ├── PositionBar.tsx
+|  |  |  ├── ServerCommandBar.tsx
+|  |  |  └── TimerDisplay.tsx
 |  |  ├── controls
 |  |  |  └── FirstPersonControls.tsx
 |  |  ├── environment
 |  |  |  ├── Floor.tsx
-|  |  |  └── Lighting.tsx
+|  |  |  ├── Lighting.tsx
+|  |  |  ├── ProceduralSky.tsx
+|  |  |  ├── Skybox.tsx
+|  |  |  └── TexturedSkybox.tsx
 |  |  └── objects
 |  |     ├── BasicShapes.tsx
 |  |     ├── Cube.tsx
@@ -93,10 +110,10 @@ React
 |  |     ├── PlayerPositionSync.tsx
 |  |     └── PlayerVisualization.tsx
 |  ├── game
-|  |  ├── entities
-|  |  |  └── Cube.tsx
 |  |  ├── state
 |  |  |  ├── CubeState.ts
+|  |  |  ├── DebugState.ts
+|  |  |  ├── GameStateStore.ts
 |  |  |  └── PlayerState.ts
 |  |  └── systems
 |  |     └── CollisionSystem.ts
@@ -116,5 +133,7 @@ React
 ├── tsconfig.app.json
 ├── tsconfig.json
 ├── tsconfig.node.json
+├── tsconfig.server.json
 └── vite.config.ts
+
 ```
