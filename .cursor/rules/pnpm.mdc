@@ -4,3 +4,4 @@ globs: *.*
 alwaysApply: true
 ---
 Always use pnpm as the package manager.
+Don't do anything else that I haven't approved unless you check first.

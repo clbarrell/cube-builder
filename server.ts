@@ -5,6 +5,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
 
+// Constants
+const MAX_CUBES = 1000;
+
 // ES module compatibility
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -246,6 +249,23 @@ io.on("connection", (socket) => {
         playerName: currentPlayerName,
       };
 
+      // Check if we've reached the MAX_CUBES limit
+      if (gameState.cubes.length >= MAX_CUBES) {
+        // Remove the oldest cube (first in the array)
+        const oldestCube = gameState.cubes.shift();
+
+        // Notify all clients about the removed cube
+        if (oldestCube) {
+          io.emit("cube:remove", { position: oldestCube.position });
+          console.log(
+            `Removed oldest cube at position ${JSON.stringify(
+              oldestCube.position
+            )} due to ${MAX_CUBES} cube limit`
+          );
+        }
+      }
+
+      // Add the new cube
       gameState.cubes.push(newCube);
 
       // Broadcast to all other players
