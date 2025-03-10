@@ -133,6 +133,14 @@ const socketIdToName: Record<string, string> = {};
 // Timer interval reference
 let timerInterval: NodeJS.Timeout | null = null;
 
+// Add a position map to track cube positions for O(1) lookups
+const cubePositionMap: Record<string, number> = {};
+
+// Helper function to create position key
+function getPositionKey(position: { x: number; y: number; z: number }): string {
+  return `${position.x},${position.y},${position.z}`;
+}
+
 // Command response interface
 interface CommandResponse {
   success: boolean;
@@ -240,13 +248,9 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // Check if a cube already exists at this position
-    const cubeExists = gameState.cubes.some(
-      (cube) =>
-        cube.position.x === position.x &&
-        cube.position.y === position.y &&
-        cube.position.z === position.z
-    );
+    // Check if a cube already exists at this position using the hash map - O(1) lookup
+    const posKey = getPositionKey(position);
+    const cubeExists = cubePositionMap[posKey] !== undefined;
 
     if (!cubeExists) {
       // Add the cube to the game state with player name as ID
@@ -263,6 +267,14 @@ io.on("connection", (socket) => {
 
         // Notify all clients about the removed cube
         if (oldestCube) {
+          // Remove the oldest cube from the position map
+          delete cubePositionMap[getPositionKey(oldestCube.position)];
+
+          // Update all indices in the position map since we removed the first element
+          Object.keys(cubePositionMap).forEach((key) => {
+            cubePositionMap[key]--;
+          });
+
           io.emit("cube:remove", { position: oldestCube.position });
           log(
             `Removed oldest cube at position ${JSON.stringify(
@@ -274,6 +286,9 @@ io.on("connection", (socket) => {
 
       // Add the new cube
       gameState.cubes.push(newCube);
+
+      // Store the cube's index in the position map
+      cubePositionMap[posKey] = gameState.cubes.length - 1;
 
       // Broadcast to all other players
       socket.broadcast.emit("cube:add", newCube);
@@ -310,22 +325,28 @@ io.on("connection", (socket) => {
     const { position } = data;
     const currentPlayerName = socketIdToName[socket.id];
 
-    // Find the cube at this position
-    const cubeIndex = gameState.cubes.findIndex(
-      (cube) =>
-        cube.position.x === position.x &&
-        cube.position.y === position.y &&
-        cube.position.z === position.z
-    );
+    // Find the cube at this position using the hash map - O(1) lookup
+    const posKey = getPositionKey(position);
+    const cubeIndex = cubePositionMap[posKey];
 
     // Check if the cube exists and belongs to the player (by name)
-    if (cubeIndex !== -1) {
+    if (cubeIndex !== undefined) {
       const cube = gameState.cubes[cubeIndex];
 
       // Allow removal if the cube belongs to this player name
       if (cube.playerId === currentPlayerName) {
         // Remove the cube from the game state
         gameState.cubes.splice(cubeIndex, 1);
+
+        // Remove from position map
+        delete cubePositionMap[posKey];
+
+        // Update indices for all cubes that came after the removed one
+        Object.keys(cubePositionMap).forEach((key) => {
+          if (cubePositionMap[key] > cubeIndex) {
+            cubePositionMap[key]--;
+          }
+        });
 
         // Broadcast to all other players
         log("Broadcasting cube:remove to other players");
@@ -551,6 +572,9 @@ function resetCubes(): CommandResponse {
   // Clear all cubes
   gameState.cubes = [];
 
+  // Clear the position map
+  Object.keys(cubePositionMap).forEach((key) => delete cubePositionMap[key]);
+
   // Reset game state to LOBBY
   gameState.gamePhase = GamePhase.LOBBY;
 
@@ -589,7 +613,7 @@ server.listen(PORT, () => {
   );
 });
 
-process.on('SIGINT', () => {
+process.on("SIGINT", () => {
   if (timerInterval) {
     clearInterval(timerInterval);
   }
