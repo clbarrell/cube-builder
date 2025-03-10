@@ -38,9 +38,16 @@ express.static.mime.define({
 
 console.log("NODE ENV", process.env.NODE_ENV);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const log = (...args: any[]) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[${new Date().toISOString()}]`, ...args);
+  }
+};
+
 // Set correct MIME types for JavaScript modules
 app.use((req, res, next) => {
-  console.log(`Request for: ${req.url}`);
+  log(`Request for: ${req.url}`);
   if (
     req.url.endsWith(".js") ||
     req.url.includes("?v=") ||
@@ -134,7 +141,7 @@ interface CommandResponse {
 
 // Socket.io event handlers
 io.on("connection", (socket) => {
-  console.log("New client connected:", socket.id);
+  log("New client connected:", socket.id);
 
   // Handle player:join
   socket.on("player:join", (data) => {
@@ -184,7 +191,7 @@ io.on("connection", (socket) => {
       });
     }
 
-    console.log(`Player joined: ${uniqueName} (${socket.id})`);
+    log(`Player joined: ${uniqueName} (${socket.id})`);
   });
 
   // Handle player:move
@@ -257,7 +264,7 @@ io.on("connection", (socket) => {
         // Notify all clients about the removed cube
         if (oldestCube) {
           io.emit("cube:remove", { position: oldestCube.position });
-          console.log(
+          log(
             `Removed oldest cube at position ${JSON.stringify(
               oldestCube.position
             )} due to ${MAX_CUBES} cube limit`
@@ -271,20 +278,20 @@ io.on("connection", (socket) => {
       // Broadcast to all other players
       socket.broadcast.emit("cube:add", newCube);
 
-      console.log(
+      log(
         `Player ${currentPlayerName} (${socket.id}) added a cube at`,
         position,
         "total:",
         gameState.cubes.length
       );
     } else {
-      console.log("Cube already exists at position:", position);
+      log("Cube already exists at position:", position);
     }
   });
 
   // Handle cube:remove
   socket.on("cube:remove", (data) => {
-    console.log("Received cube:remove event with data:", data);
+    log("Received cube:remove event with data:", data);
 
     // Check if data is valid
     if (!data || !data.position) {
@@ -321,21 +328,21 @@ io.on("connection", (socket) => {
         gameState.cubes.splice(cubeIndex, 1);
 
         // Broadcast to all other players
-        console.log("Broadcasting cube:remove to other players");
+        log("Broadcasting cube:remove to other players");
         socket.broadcast.emit("cube:remove", { position });
 
-        console.log(
+        log(
           `Player ${currentPlayerName} (${socket.id}) removed a cube at`,
           position
         );
-        console.log("Current cube count:", gameState.cubes.length);
+        log("Current cube count:", gameState.cubes.length);
       } else {
         console.warn(
           `Player ${currentPlayerName} tried to remove a cube that belongs to ${cube.playerId}`
         );
       }
     } else {
-      console.log("No cube found at position:", position);
+      log("No cube found at position:", position);
     }
   });
 
@@ -349,7 +356,7 @@ io.on("connection", (socket) => {
     }
 
     const { command } = data;
-    console.log(`Received command from ${socket.id}: ${command}`);
+    log(`Received command from ${socket.id}: ${command}`);
 
     // Process commands
     try {
@@ -381,9 +388,9 @@ io.on("connection", (socket) => {
       // Broadcast to other players
       io.emit("player:leave", { id: playerName });
 
-      console.log(`Player left: ${player.name} (${socket.id})`);
+      log(`Player left: ${player.name} (${socket.id})`);
     } else {
-      console.log("Client disconnected:", socket.id);
+      log("Client disconnected:", socket.id);
     }
   });
 });
@@ -576,8 +583,15 @@ function resetCubes(): CommandResponse {
 // Start server
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(
+  log(`Server running on port ${PORT}`);
+  log(
     `Connect from other devices using your local network IP address and port ${PORT}`
   );
+});
+
+process.on('SIGINT', () => {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+  process.exit(0);
 });
