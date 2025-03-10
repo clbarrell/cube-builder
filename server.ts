@@ -396,10 +396,19 @@ function processCommand(command: string, socketId: string): CommandResponse {
       return startTimer(minutes);
     }
 
+    case "memory":
+      return {
+        success: true,
+        message: `Memory usage: ${Math.round(
+          process.memoryUsage().heapUsed / 1024 / 1024
+        )}MB / 512MB`,
+      };
+
     case "help":
       return {
         success: true,
-        message: "Available commands: reset, startgame, timer <minutes>, help",
+        message:
+          "Available commands: reset, startgame, timer <minutes>, memory, help",
       };
 
     default:
