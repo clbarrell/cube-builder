@@ -58,23 +58,42 @@ const TimerDisplay: React.FC = () => {
   };
 
   return (
-    <group position={[floorSizeWidth, 30, floorSizeHeight]}>
-      <Text
-        ref={textRef}
-        position={[0, 0, 0]}
-        fontSize={18}
-        color={getColor()}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.1}
-        outlineColor="#000000"
-        // Remove rotation inheritance from parent
-        rotation={[0, 0, 0]}
-        material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
-      >
-        {displayText}
-      </Text>
-    </group>
+    <>
+      <group position={[floorSizeWidth, 30, floorSizeHeight]}>
+        <Text
+          ref={textRef}
+          position={[0, 0, 0]}
+          fontSize={18}
+          color={getColor()}
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.1}
+          outlineColor="#000000"
+          // Remove rotation inheritance from parent
+          rotation={[0, 0, 0]}
+          material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
+        >
+          {displayText}
+        </Text>
+      </group>
+      <group position={[-floorSizeWidth, 30, -floorSizeHeight]}>
+        <Text
+          ref={textRef}
+          position={[0, 0, 0]}
+          fontSize={18}
+          color={getColor()}
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.1}
+          outlineColor="#000000"
+          // Remove rotation inheritance from parent
+          rotation={[0, 0, 0]}
+          material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
+        >
+          {displayText}
+        </Text>
+      </group>
+    </>
   );
 };
 
