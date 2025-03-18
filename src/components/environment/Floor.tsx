@@ -6,10 +6,10 @@ export const floorSizeWidth = 60;
 export const floorSizeHeight = 60;
 
 // River configuration
-export const riverWidth = 20; // +/- 5 on X axis
-export const riverDepth = 1; // How much lower the river is compared to land
+export const riverWidth = 30; // +/- 5 on X axis
+export const riverDepth = 2; // How much lower the river is compared to land
 export const landHeight = 0; // Default land height
-export const wallHeight = 0.99; // Height of the walls rising from river
+export const wallHeight = riverDepth - 0.01; // Height of the walls rising from river
 
 // Export river bottom position for collision detection
 export const riverBottomY = landHeight - riverDepth;
@@ -37,7 +37,7 @@ const Floor: React.FC = () => {
         {z}
       </Text>,
       <Text
-        key={`z-${z}`}
+        key={`z-+${z}`}
         position={[-riverWidth / 2 - 0.45, labelHeight, z]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={fontSize}
