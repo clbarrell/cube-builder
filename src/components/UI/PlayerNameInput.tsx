@@ -34,6 +34,14 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
     }
   };
 
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    // Only handle clicks directly on the background, not its children
+    if (e.target === e.currentTarget && inputRef.current) {
+      e.preventDefault();
+      inputRef.current.focus();
+    }
+  };
+
   // Handle Enter key press to submit the form
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -52,7 +60,10 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50"
+      onClick={handleBackgroundClick}
+    >
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-white mb-4">
           Welcome to Cube World
