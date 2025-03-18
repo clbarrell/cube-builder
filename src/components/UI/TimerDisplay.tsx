@@ -15,6 +15,8 @@ const TimerDisplay: React.FC = () => {
   // Reference to the text element to update its rotation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const textRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const textRef2 = useRef<any>(null);
   const [displayText, setDisplayText] = useState("");
 
   // Update the timer text every frame and make it face the camera
@@ -36,6 +38,9 @@ const TimerDisplay: React.FC = () => {
     // Make the text look at the camera
     if (textRef.current) {
       textRef.current.lookAt(camera.position);
+    }
+    if (textRef2.current) {
+      textRef2.current.lookAt(camera.position);
     }
   });
 
@@ -78,7 +83,7 @@ const TimerDisplay: React.FC = () => {
       </group>
       <group position={[-floorSizeWidth, 30, -floorSizeHeight]}>
         <Text
-          ref={textRef}
+          ref={textRef2}
           position={[0, 0, 0]}
           fontSize={18}
           color={getColor()}
