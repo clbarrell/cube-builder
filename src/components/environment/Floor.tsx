@@ -6,9 +6,10 @@ export const floorSizeWidth = 60;
 export const floorSizeHeight = 60;
 
 // River configuration
-export const riverWidth = 10; // +/- 5 on X axis
+export const riverWidth = 20; // +/- 5 on X axis
 export const riverDepth = 1; // How much lower the river is compared to land
 export const landHeight = 0; // Default land height
+export const wallHeight = 0.99; // Height of the walls rising from river
 
 // Export river bottom position for collision detection
 export const riverBottomY = landHeight - riverDepth;
@@ -19,30 +20,6 @@ const Floor: React.FC = () => {
   const step = 5; // Place a label every 5 units
   const fontSize = 0.3;
   const labelHeight = landHeight + 0.02; // Slightly above the land
-
-  // Create X-axis labels
-  // for (let x = -floorSizeWidth / 2; x <= floorSizeWidth / 2; x += step) {
-  //   if (x === 0) continue; // Skip zero for cleaner look
-  //   coordinateLabels.push(
-  //     <Text
-  //       key={`x-${x}`}
-  //       position={[
-  //         x,
-  //         (Math.abs(x) <= riverWidth / 2 ? -riverDepth : landHeight) +
-  //           labelHeight,
-  //         0.25,
-  //       ]}
-  //       rotation={[-Math.PI / 2, 0, 0]}
-  //       fontSize={fontSize}
-  //       color="#525252"
-  //       anchorX="center"
-  //       anchorY="middle"
-  //       renderOrder={1}
-  //     >
-  //       {x}
-  //     </Text>
-  //   );
-  // }
 
   // Create Z-axis labels
   for (let z = -floorSizeHeight / 2; z <= floorSizeHeight / 2; z += step) {
@@ -113,6 +90,31 @@ const Floor: React.FC = () => {
     return <lineSegments geometry={gridGeometry} material={gridMaterial} />;
   };
 
+  // Create a wall along the river edge
+  const createRiverWall = (
+    position: [number, number, number],
+    side: "left" | "right"
+  ) => {
+    // Determine rotation based on which side the wall is on
+    const rotationY = side === "left" ? Math.PI / 2 : -Math.PI / 2;
+
+    return (
+      <mesh
+        position={position}
+        rotation={[0, rotationY, 0]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[floorSizeHeight, wallHeight, 0.1]} />
+        <meshStandardMaterial
+          color="#7d6b5d" // Stone/wall color
+          roughness={0.9}
+          metalness={0.1}
+        />
+      </mesh>
+    );
+  };
+
   return (
     <>
       {/* Left land */}
@@ -156,6 +158,18 @@ const Floor: React.FC = () => {
           metalness={0.2}
         />
       </mesh>
+
+      {/* Left river wall */}
+      {createRiverWall(
+        [-riverWidth / 2, wallHeight / 2 - riverDepth, 0],
+        "left"
+      )}
+
+      {/* Right river wall */}
+      {createRiverWall(
+        [riverWidth / 2, wallHeight / 2 - riverDepth, 0],
+        "right"
+      )}
 
       {/* Grid helpers only on land */}
       <group position={[0, landHeight + 0.01, 0]}>
