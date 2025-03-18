@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { PointerLockControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useCubeStore } from "../../game/state/CubeState";
+import { riverWidth, riverBottomY, landHeight } from "../environment/Floor";
 
 // First-person movement controls
 const FirstPersonControls: React.FC = () => {
@@ -20,7 +21,6 @@ const FirstPersonControls: React.FC = () => {
 
   // Camera settings
   const speed = useRef(0.1);
-  const minY = useRef(1); // Minimum height (to prevent going below floor)
   const playerRadius = 0.4; // Reduced collision radius for the player
   const emergencyEscapeSpeed = 0.2; // Speed for emergency escape when stuck
 
@@ -217,6 +217,16 @@ const FirstPersonControls: React.FC = () => {
     return false;
   };
 
+  // Check if a player is over the river
+  const isOverRiver = (x: number) => {
+    return Math.abs(x) <= riverWidth / 2;
+  };
+
+  // Get minimum height based on position (river or land)
+  const getMinHeight = (position: THREE.Vector3) => {
+    return (isOverRiver(position.x) ? riverBottomY : landHeight) + 0.5;
+  };
+
   // Main update loop
   useFrame(() => {
     // Check if we're currently stuck inside a cube
@@ -323,9 +333,10 @@ const FirstPersonControls: React.FC = () => {
       }
     }
 
-    // Prevent going below floor
-    if (camera.position.y < minY.current) {
-      camera.position.y = minY.current;
+    // Prevent going below floor or river bottom based on position
+    const minY = getMinHeight(camera.position);
+    if (camera.position.y < minY) {
+      camera.position.y = minY;
     }
   });
 

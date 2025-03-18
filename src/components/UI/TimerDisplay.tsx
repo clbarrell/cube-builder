@@ -15,6 +15,8 @@ const TimerDisplay: React.FC = () => {
   // Reference to the text element to update its rotation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const textRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const textRef2 = useRef<any>(null);
   const [displayText, setDisplayText] = useState("");
 
   // Update the timer text every frame and make it face the camera
@@ -37,6 +39,9 @@ const TimerDisplay: React.FC = () => {
     if (textRef.current) {
       textRef.current.lookAt(camera.position);
     }
+    if (textRef2.current) {
+      textRef2.current.lookAt(camera.position);
+    }
   });
 
   // Color based on time left
@@ -58,23 +63,42 @@ const TimerDisplay: React.FC = () => {
   };
 
   return (
-    <group position={[floorSizeWidth, 30, floorSizeHeight]}>
-      <Text
-        ref={textRef}
-        position={[0, 0, 0]}
-        fontSize={18}
-        color={getColor()}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.1}
-        outlineColor="#000000"
-        // Remove rotation inheritance from parent
-        rotation={[0, 0, 0]}
-        material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
-      >
-        {displayText}
-      </Text>
-    </group>
+    <>
+      <group position={[floorSizeWidth, 30, floorSizeHeight]}>
+        <Text
+          ref={textRef}
+          position={[0, 0, 0]}
+          fontSize={18}
+          color={getColor()}
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.1}
+          outlineColor="#000000"
+          // Remove rotation inheritance from parent
+          rotation={[0, 0, 0]}
+          material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
+        >
+          {displayText}
+        </Text>
+      </group>
+      <group position={[-floorSizeWidth, 30, -floorSizeHeight]}>
+        <Text
+          ref={textRef2}
+          position={[0, 0, 0]}
+          fontSize={18}
+          color={getColor()}
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.1}
+          outlineColor="#000000"
+          // Remove rotation inheritance from parent
+          rotation={[0, 0, 0]}
+          material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
+        >
+          {displayText}
+        </Text>
+      </group>
+    </>
   );
 };
 
