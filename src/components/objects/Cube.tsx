@@ -2,24 +2,13 @@ import React, { useMemo } from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { usePlayerStore } from "../../game/state/PlayerState";
+import { getPlayerColor } from "../../utils/colours";
 
 interface CubeProps {
   position: THREE.Vector3;
   playerId: string;
   playerName: string;
 }
-
-// Generate a consistent color based on player name
-const getPlayerColor = (playerId: string): string => {
-  // Simple hash function to generate a number from a string
-  const hash = playerId.split("").reduce((acc, char) => {
-    return char.charCodeAt(0) + ((acc << 5) - acc);
-  }, 0);
-
-  // Convert to HSL color with good saturation and lightness
-  const h = Math.abs(hash % 360);
-  return `hsl(${h}, 70%, 60%)`;
-};
 
 interface TextFaceConfig {
   position: [number, number, number];

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useCubeStore } from "../../game/state/CubeState";
@@ -6,6 +6,7 @@ import { usePlayerStore } from "../../game/state/PlayerState";
 import { useKeyPress } from "../../hooks/useKeyPress";
 import { useDebugStore } from "../../game/state/DebugState";
 import { useGameStateStore } from "../../game/state/GameStateStore";
+import { getPlayerColor } from "../../utils/colours";
 
 const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
@@ -17,6 +18,11 @@ const CubePlacementPreview: React.FC = () => {
   const debugModeEnabled = useDebugStore((state) => state.debugModeEnabled);
   // Get the ability to modify cubes from the GameStateStore
   const canModifyCubes = useGameStateStore((state) => state.canModifyCubes());
+
+  // Memoize the player's cube color
+  const playerCubeColor = useMemo(() => {
+    return getPlayerColor(localPlayerId || "default");
+  }, [localPlayerId]);
 
   // Track control key press for removal mode
   const isControlLeftPressed = useKeyPress("ControlLeft");
@@ -352,7 +358,7 @@ const CubePlacementPreview: React.FC = () => {
           >
             <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial
-              color={isValidPlacement ? "green" : "red"}
+              color={isValidPlacement ? playerCubeColor : "red"}
               transparent={true}
               opacity={0.5}
             />
