@@ -7,6 +7,7 @@ import { useKeyPress } from "../../hooks/useKeyPress";
 import { useDebugStore } from "../../game/state/DebugState";
 import { useGameStateStore } from "../../game/state/GameStateStore";
 import { getPlayerColor } from "../../utils/colours";
+import { riverWidth } from "../../components/environment/Floor";
 
 const CubePlacementPreview: React.FC = () => {
   const { camera, scene } = useThree();
@@ -88,12 +89,39 @@ const CubePlacementPreview: React.FC = () => {
     return new THREE.Vector3(snapX, snapY, snapZ);
   };
 
+  // Helper function to check if a position is over the river
+  const isOverRiver = (pos: THREE.Vector3): boolean => {
+    return Math.abs(pos.x) < riverWidth / 2;
+  };
+
+  // Helper function to check if a position has an adjacent cube
+  const hasAdjacentCube = (pos: THREE.Vector3): boolean => {
+    const adjacentPositions = [
+      new THREE.Vector3(pos.x + 1, pos.y, pos.z),
+      new THREE.Vector3(pos.x - 1, pos.y, pos.z),
+      new THREE.Vector3(pos.x, pos.y + 1, pos.z),
+      new THREE.Vector3(pos.x, pos.y - 1, pos.z),
+      new THREE.Vector3(pos.x, pos.y, pos.z + 1),
+      new THREE.Vector3(pos.x, pos.y, pos.z - 1),
+    ];
+
+    return adjacentPositions.some((adjPos) => getCubeAtPosition(adjPos));
+  };
+
   // Helper function to check if a position is valid for placement
   const isValidPosition = (pos: THREE.Vector3): boolean => {
     if (!pos) return false;
 
     // Check if position is already occupied by another cube
-    return !getCubeAtPosition(pos);
+    if (getCubeAtPosition(pos)) return false;
+
+    // If over river, only allow if adjacent to a cube
+    if (isOverRiver(pos) && !hasAdjacentCube(pos)) {
+      return false;
+    }
+
+    // Otherwise, position is valid
+    return true;
   };
 
   // Helper function to adjust position for floor placement
@@ -228,9 +256,6 @@ const CubePlacementPreview: React.FC = () => {
         // Store the placement position
         setPlacementPosition(newPlacementPosition.clone());
 
-        // Adjust position for floor placement and snap to grid
-        const adjustedPosition = adjustPositionForFloor(point);
-
         if (isRemovalMode) {
           // In removal mode, first check if we're directly clicking on a cube
           if (
@@ -246,20 +271,29 @@ const CubePlacementPreview: React.FC = () => {
             setHoverRemovableCube(cubePosition);
           } else {
             // Check if there's a removable cube at the adjusted position
-            const canRemove = isRemovableCube(adjustedPosition);
-            setHoverRemovableCube(canRemove ? adjustedPosition : null);
+            const canRemove = isRemovableCube(newPlacementPosition);
+            setHoverRemovableCube(canRemove ? newPlacementPosition : null);
           }
 
           // Hide the placement preview in removal mode
           setPreviewPosition(null);
           setIsValidPlacement(false);
         } else {
-          // In placement mode, check if this position is valid
-          const valid = isValidPosition(adjustedPosition);
+          // Adjust position for floor placement and snap to grid
+          const adjustedPosition = adjustPositionForFloor(point);
 
-          // Update the preview position and validity
-          setPreviewPosition(adjustedPosition);
-          setIsValidPlacement(valid);
+          // Check if this position is valid (not over river unless adjacent to cube)
+          const isValid = isValidPosition(adjustedPosition);
+
+          // Only show preview if the position is valid
+          if (isValid) {
+            setPreviewPosition(adjustedPosition);
+            setIsValidPlacement(true);
+          } else {
+            // Don't show preview for invalid positions (i.e., river without adjacent cubes)
+            setPreviewPosition(null);
+            setIsValidPlacement(false);
+          }
 
           // Clear removal hover state
           setHoverRemovableCube(null);
