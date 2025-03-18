@@ -26,7 +26,7 @@ interface CubeState {
 
 export const useCubeStore = create<CubeState>()((set, get) => ({
   cubes: [],
-  maxCubesPerPlayer: 25,
+  maxCubesPerPlayer: 10,
 
   addCube: (position) => {
     const localPlayer = usePlayerStore.getState().getLocalPlayer();
