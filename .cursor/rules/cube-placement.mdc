@@ -1,0 +1,194 @@
+---
+description: Standards for implementing and extending the cube placement system in the cube-builder application.
+globs: src/components/objects/CubePlacementPreview.tsx, src/components/objects/Cube.tsx, src/game/state/CubeState.ts
+alwaysApply: false
+---
+
+<rule>
+name: cube_placement_system
+description: Guidelines for implementing and working with the cube placement system
+
+## Cube Placement System Overview
+
+This rule describes how to properly implement and modify the cube placement system, which is a core gameplay mechanic.
+
+### Key Components
+
+1. **Cube Placement Preview**
+   - Handles raycasting and position determination
+   - Implements grid snapping and placement validation
+   - Provides visual feedback for valid/invalid placement
+
+2. **Cube State Management**
+   - Stores and manages cube data (position, owner, etc.)
+   - Handles adding and removing cubes
+   - Tracks cube limits per player
+
+3. **Placement Rules**
+   - Special rules for river areas (requiring adjacent support)
+   - Distance limitations for placement
+   - Collision detection to prevent overlapping
+
+4. **Player Ownership**
+   - Cubes are associated with players via playerId
+   - Only owners can remove their own cubes
+   - Player colors applied to their cubes
+
+### Implementation Guidelines
+
+#### Grid Snapping System
+
+The cube placement system uses a grid snapping mechanism to align cubes:
+
+```typescript
+// Helper function to snap to grid with 0.5 offset (0.5, 1.5, 2.5, etc.)
+const snapToGrid = (pos: THREE.Vector3): THREE.Vector3 => {
+  // Round to nearest whole number and add 0.5
+  const snapX = Math.floor(pos.x) + 0.5;
+  const snapZ = Math.floor(pos.z) + 0.5;
+
+  // For Y, we want 0.5, 1.5, 2.5, etc. but with a minimum of 0.5
+  let snapY = Math.floor(pos.y) + 0.5;
+  if (snapY < 0.5) snapY = 0.5;
+
+  return new THREE.Vector3(snapX, snapY, snapZ);
+};
+```
+
+#### Placement Validation
+
+When validating cube placement:
+
+```typescript
+// Helper function to check if a position is valid for placement
+const isValidPosition = (pos: THREE.Vector3): boolean => {
+  if (!pos) return false;
+
+  // Check if position is already occupied by another cube
+  if (getCubeAtPosition(pos)) return false;
+
+  // If over river, only allow if adjacent to a cube
+  if (isOverRiver(pos) && !hasAdjacentCube(pos)) {
+    return false;
+  }
+
+  // Otherwise, position is valid
+  return true;
+};
+```
+
+#### Cube Removal System
+
+Only cube owners can remove their own cubes:
+
+```typescript
+// Helper function to check if a cube at position is removable by local player
+const isRemovableCube = (pos: THREE.Vector3): boolean => {
+  if (!pos) return false;
+
+  const cube = getCubeAtPosition(pos);
+  return !!cube && cube.playerId === localPlayerId;
+};
+```
+
+#### Cube Data Structure
+
+Cubes are stored with this structure in the state:
+
+```typescript
+interface Cube {
+  position: Vector3;
+  playerId: string;
+  // Any additional properties like color, type, etc.
+}
+```
+
+#### Maximum Distance Handling
+
+Implement distance checks for placement:
+
+```typescript
+// Maximum distance for cube placement/removal
+const MAX_PLACEMENT_DISTANCE = 5;
+
+// In raycasting logic
+if (intersects.length > 0 && intersects[0].distance <= MAX_PLACEMENT_DISTANCE) {
+  // Placement is allowed
+} else {
+  // Too far away
+}
+```
+
+### River Placement Rules
+
+Special rules apply for placing cubes over the river:
+
+```typescript
+// Helper function to check if a position is over the river
+const isOverRiver = (pos: THREE.Vector3): boolean => {
+  return Math.abs(pos.x) < riverWidth / 2;
+};
+
+// Helper function to check if a position has an adjacent cube
+const hasAdjacentCube = (pos: THREE.Vector3): boolean => {
+  const adjacentPositions = [
+    new THREE.Vector3(pos.x + 1, pos.y, pos.z),
+    new THREE.Vector3(pos.x - 1, pos.y, pos.z),
+    new THREE.Vector3(pos.x, pos.y + 1, pos.z),
+    new THREE.Vector3(pos.x, pos.y - 1, pos.z),
+    new THREE.Vector3(pos.x, pos.y, pos.z + 1),
+    new THREE.Vector3(pos.x, pos.y, pos.z - 1),
+  ];
+
+  return adjacentPositions.some((adjPos) => getCubeAtPosition(adjPos));
+};
+```
+
+### Visual Feedback
+
+Implement visual feedback for placement preview:
+
+```typescript
+// Set material color based on placement validity
+<meshStandardMaterial
+  color={isValidPlacement ? playerCubeColor : "#ff0000"} 
+  transparent={true}
+  opacity={0.5}
+/>
+```
+
+### Game Phase Integration
+
+Cube placement should respect the current game phase:
+
+```typescript
+// Get the ability to modify cubes from the GameStateStore
+const canModifyCubes = useGameStateStore((state) => state.canModifyCubes());
+
+// Only process placement/removal when allowed
+if (!canModifyCubes) {
+  // Clear all preview states when not in active phase
+  setCursorPosition(null);
+  setPreviewPosition(null);
+  setPlacementPosition(null);
+  setIsValidPlacement(false);
+  setHoverRemovableCube(null);
+  return;
+}
+```
+
+### Troubleshooting
+
+If cube placement isn't working correctly:
+
+1. Check if the game state allows for cube placement (active phase)
+2. Verify raycaster setup and layer configuration
+3. Test grid snapping with various camera angles
+4. Check for conflicts with distance limitations
+5. Verify that cube collision detection is working properly
+6. Test special cases like river placement with appropriate adjacent support
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

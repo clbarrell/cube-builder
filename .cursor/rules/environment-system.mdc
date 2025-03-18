@@ -1,0 +1,155 @@
+---
+description: Standards for implementing environment components and features in the cube-builder application.
+globs: src/components/environment/*.tsx
+alwaysApply: false
+---
+
+<rule>
+name: environment_system
+description: Guidelines for implementing and extending environment components in the cube-builder application
+
+## Environment System Overview
+
+This rule describes how to properly implement and modify environment components like Floor, Skybox, and other landscape features.
+
+### Key Components
+
+1. **Floor Component**
+   - Defines the game's topography including land areas and water features
+   - Exports dimensions and positioning constants used for collision detection
+   - Uses a coordinate system with grid markers for orientation
+
+2. **River System**
+   - The central river is a key gameplay element with specific dimensions
+   - River has walls and a different height level from the surrounding land
+   - Cubes interact differently over river areas (requiring adjacent support)
+
+3. **Coordination with Game Systems**
+   - Environment components export constants used by other systems
+   - Collision detection, cube placement rules reference environment dimensions
+   - Height levels affect player movement and object placement
+
+### Implementation Guidelines
+
+#### Floor Component Constants
+
+The Floor component exports these critical constants that must be maintained:
+
+```typescript
+// These constants define the dimensions of the floor
+export const floorSizeWidth = 60;
+export const floorSizeHeight = 60;
+
+// River configuration 
+export const riverWidth = 30; // Width of river
+export const riverDepth = 2; // How much lower the river is compared to land
+export const landHeight = 0; // Default land height
+export const wallHeight = riverDepth - 0.01; // Height of river walls
+
+// River bottom position for collision detection
+export const riverBottomY = landHeight - riverDepth;
+```
+
+#### Coordinate System
+
+The floor uses a grid system with labeled coordinates:
+- X axis runs horizontally (perpendicular to the river)
+- Z axis runs along the length of the river
+- Y axis represents height
+- Grid markers appear at regular intervals (every 5 units)
+
+#### Modifying Environment Elements
+
+When modifying environment components:
+
+1. **Update Constants Carefully**
+   - Changes to dimensions affect gameplay mechanics
+   - If changing constants, update any components that reference them
+   - Consider collision detection implications
+
+2. **Maintain Visual Indicators**
+   - Coordinate labels should remain visible for orientation
+   - Grid lines should align with the snapping system for cube placement
+   - River boundaries should be clearly visible
+
+3. **Performance Considerations**
+   - Use instanced meshes for repeated elements when possible
+   - Consider LOD (Level of Detail) for distant elements
+   - Optimize geometry for consistent frame rates
+
+#### River Placement Rules
+
+The river system has specific rules that affect gameplay:
+
+```typescript
+// Check if a position is over the river
+const isOverRiver = (pos: THREE.Vector3): boolean => {
+  return Math.abs(pos.x) < riverWidth / 2;
+};
+
+// Special placement rules for river areas
+if (isOverRiver(pos) && !hasAdjacentCube(pos)) {
+  return false; // Cannot place cubes floating over river
+}
+```
+
+### Example: Adding Environmental Features
+
+When adding a new environmental feature (like hills, trees, etc.):
+
+```typescript
+// In Floor.tsx or a new environment component
+const createHills = () => {
+  return (
+    <group position={[x, y, z]}>
+      <mesh receiveShadow castShadow>
+        <geometry {...} />
+        <meshStandardMaterial 
+          color="#654321"
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+// Add to the render function
+return (
+  <>
+    {/* Existing floor components */}
+    {createHills()}
+  </>
+);
+```
+
+### Integration with Other Systems
+
+Environment components integrate with other systems:
+
+1. **Cube Placement System**
+   - River placement rules in CubePlacementPreview.tsx
+   - Grid snapping to align with floor grid
+
+2. **Collision System**
+   - Floor and river dimensions used for collision detection
+   - River walls block player movement
+
+3. **UI Components**
+   - TimerDisplay and other UI positioned relative to floor dimensions
+   - Coordinate systems reference floor dimensions
+
+### Troubleshooting
+
+When environment components don't look or behave correctly:
+
+1. Check for mismatched dimensions between floor constants and references
+2. Verify that shadow casting/receiving is properly configured
+3. Ensure grid lines and coordinate labels match the actual dimensions
+4. Test collision detection against environment boundaries
+5. Verify that the player and camera can properly interact with all features
+
+metadata:
+  priority: medium
+  version: 1.0
+</rule> 
