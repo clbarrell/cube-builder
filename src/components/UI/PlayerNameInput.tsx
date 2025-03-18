@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { usePlayerStore } from "../../game/state/PlayerState";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -10,6 +10,7 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
   const [name, setName] = useLocalStorage("name-ls", "");
   const [isVisible, setIsVisible] = useState(true);
   const localPlayerName = usePlayerStore((state) => state.localPlayerName);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Hide modal if player name is already set
   useEffect(() => {
@@ -17,6 +18,12 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
       setIsVisible(false);
     }
   }, [localPlayerName]);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +33,7 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
       setIsVisible(false);
     }
   };
+
   // Handle Enter key press to submit the form
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -59,6 +67,7 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onNameSubmit }) => {
             <input
               type="text"
               id="playerName"
+              ref={inputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
