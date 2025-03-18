@@ -61,6 +61,7 @@ actions:
          - In subdirectories outside .cursor/rules
          - In any other location
 
+      5. Don't make rules longer than necessary. Keep them focused only on the critical details.
 examples:
   - input: |
       # Bad: Rule file in wrong location

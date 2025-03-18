@@ -1,0 +1,157 @@
+---
+description: Guidelines for color usage, player color generation, and UI color system in the cube-builder application.
+globs: src/utils/colours.ts, src/components/UI/*.tsx
+alwaysApply: false
+---
+
+<rule>
+name: color_system
+description: Standards for working with colors, player identification, and UI color schemes
+
+## Color System Overview
+
+This rule describes the color system used in the cube-builder application, including player identification colors, UI state colors, and environment element colors.
+
+### Key Components
+
+1. **Player Color Generation**
+   - Deterministic color generation based on player IDs
+   - Consistent color assignment for player identification
+   - HSL color space used for better control over saturation and lightness
+
+2. **UI State Colors**
+   - Color coding for game states (lobby, active, finished)
+   - Time-based color indicators (warning colors for timers)
+   - Consistent color scheme across UI components
+
+3. **Material Colors**
+   - Standard colors for environment elements
+   - Consistent material properties (roughness, metalness)
+   - Color accessibility considerations
+
+### Implementation Guidelines
+
+#### Player Color Generation
+
+The application uses a deterministic hash-based approach to generate player colors:
+
+```typescript
+// Generate a consistent color based on player name
+export const getPlayerColor = (playerId: string): string => {
+  // Simple hash function to generate a number from a string
+  const hash = playerId.split("").reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0);
+
+  // Convert to HSL color with good saturation and lightness
+  const h = Math.abs(hash % 360);
+  return `hsl(${h}, 70%, 60%)`;
+};
+```
+
+This function must be used for all player color assignments to ensure consistency across components.
+
+#### UI State Color System
+
+Use these standard colors for game state indication:
+
+```typescript
+// Color based on game state
+const getColor = () => {
+  if (gamePhase === GamePhase.LOBBY) return new Color(0x3498db); // Blue
+  if (gamePhase === GamePhase.FINISHED) return new Color(0xe74c3c); // Red
+
+  // Only check timer colors if there's an active countdown
+  if (timer.endTime !== null) {
+    const timeText = getFormattedTimeLeft();
+    const [minutes] = timeText.split(":").map(Number);
+
+    if (minutes < 1) return new Color(0xe74c3c); // Red for < 1 minute
+    if (minutes < 3) return new Color(0xf39c12); // Orange for < 3 minutes
+    return new Color(0x2ecc71); // Green otherwise
+  }
+
+  return new Color(0x2ecc71); // Green for active game without timer
+};
+```
+
+#### Material Color Standards
+
+When creating materials for environment elements or objects:
+
+1. **Natural Elements**
+   - Ground/grass: `#4a6741` (with roughness: 0.8, metalness: 0.1)
+   - Stone/walls: `#7d6b5d` (with roughness: 0.9, metalness: 0.1)
+   - Water: `#2a5b8a` (with roughness: 0.1, metalness: 0.2)
+
+2. **Structural Elements**
+   - Grid lines: `#666666` (with transparency: 0.4)
+   - Coordinate labels: `#525252`
+
+3. **UI Elements**
+   - Active/success: `#2ecc71` (green)
+   - Warning: `#f39c12` (orange)
+   - Error/danger: `#e74c3c` (red)
+   - Info/neutral: `#3498db` (blue)
+
+### Using Colors in Components
+
+When implementing colors in components:
+
+1. **For Player Identification**
+```typescript
+import { getPlayerColor } from "../../utils/colours";
+
+// Memoize the player's cube color
+const playerCubeColor = useMemo(() => {
+  return getPlayerColor(localPlayerId || "default");
+}, [localPlayerId]);
+
+// Use in materials
+<meshStandardMaterial color={playerCubeColor} />
+```
+
+2. **For Timer and State Indicators**
+```typescript
+// Get color based on time or state
+const color = getColor();
+
+<Text
+  color={color}
+  // other props
+>
+  {displayText}
+</Text>
+```
+
+3. **For Environment Elements**
+```typescript
+<meshStandardMaterial
+  color="#4a6741" // Grass green color
+  roughness={0.8}
+  metalness={0.1}
+/>
+```
+
+### Color Accessibility
+
+Ensure all color combinations maintain adequate contrast for accessibility:
+
+1. Use both color and shape/position for critical information
+2. Maintain a minimum contrast ratio of 4.5:1 for text
+3. Avoid relying solely on color to convey information
+4. Test with color blindness simulators for common types (Protanopia, Deuteranopia, Tritanopia)
+
+### Troubleshooting
+
+If colors aren't displaying correctly:
+
+1. Check that the player ID is being passed correctly to the color generation function
+2. Verify Three.js material color format (string format vs Color object)
+3. Test color visibility against different backgrounds
+4. Ensure color values are being properly updated when state changes
+
+metadata:
+  priority: medium
+  version: 1.0
+</rule> 

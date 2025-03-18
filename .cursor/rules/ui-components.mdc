@@ -1,0 +1,248 @@
+---
+description: Standards for implementing UI components in the cube-builder application.
+globs: src/components/UI/*.tsx
+alwaysApply: false
+---
+
+<rule>
+name: ui_components
+description: Guidelines for implementing and extending UI components in the cube-builder application
+
+## UI Components Overview
+
+This rule describes how to properly implement and modify UI components in the cube-builder application, both 2D DOM-based UI and 3D in-scene UI elements.
+
+### Key Components
+
+1. **Player Interaction UI**
+   - Player name input and authentication
+   - Game controls help and instructions
+   - Server command interface
+
+2. **Game State Indicators**
+   - Timer display and game phase visualization
+   - Player counters and cube counters
+   - Position indicators and debug overlays
+
+3. **Positioning Systems**
+   - In-world vs. screen-space UI
+   - Responsive layout considerations
+   - Accessibility features
+
+### Implementation Guidelines
+
+#### Player Name Input
+
+The PlayerNameInput component follows these patterns:
+
+```typescript
+// Use local storage for persistence
+const [name, setName] = useLocalStorage("name-ls", "");
+
+// Hide modal if player name is already set
+useEffect(() => {
+  if (localPlayerName) {
+    setIsVisible(false);
+  }
+}, [localPlayerName]);
+
+// Focus input automatically
+useEffect(() => {
+  if (inputRef.current) {
+    inputRef.current.focus();
+  }
+}, []);
+
+// Handle background clicks to maintain focus
+const handleBackgroundClick = (e: React.MouseEvent) => {
+  // Only handle clicks directly on the background, not its children
+  if (e.target === e.currentTarget && inputRef.current) {
+    e.preventDefault();
+    inputRef.current.focus();
+  }
+};
+
+// Handle Enter key press to submit the form
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.code === "Enter" && isVisible && name.trim()) {
+      onNameSubmit(name.trim());
+      setIsVisible(false);
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, [isVisible, name, onNameSubmit]);
+```
+
+#### 3D Text UI Components
+
+For in-world text like the TimerDisplay:
+
+```typescript
+// Use a reference to update the text element every frame
+const textRef = useRef<any>(null);
+
+// Make the text face the camera
+useFrame(({ camera }) => {
+  // Update display text based on game phase
+  // ...
+
+  // Make the text look at the camera
+  if (textRef.current) {
+    textRef.current.lookAt(camera.position);
+  }
+});
+
+// Position relative to global coordinates
+<group position={[floorSizeWidth, 30, floorSizeHeight]}>
+  <Text
+    ref={textRef}
+    position={[0, 0, 0]}
+    fontSize={18}
+    color={getColor()}
+    anchorX="center"
+    anchorY="middle"
+    outlineWidth={0.1}
+    outlineColor="#000000"
+    // Remove rotation inheritance from parent
+    rotation={[0, 0, 0]}
+    material-opacity={gamePhase === GamePhase.FINISHED ? 0.5 : 1}
+  >
+    {displayText}
+  </Text>
+</group>
+```
+
+#### UI State Management
+
+UI components should sync with game state:
+
+```typescript
+// Get state from central store
+const gamePhase = useGameStateStore((state) => state.gamePhase);
+const timer = useGameStateStore((state) => state.timer);
+
+// Update UI based on game state
+if (gamePhase === GamePhase.ACTIVE) {
+  // Only show timer if there's an active countdown
+  if (timer.endTime !== null) {
+    setDisplayText(getFormattedTimeLeft());
+  } else {
+    setDisplayText("");
+  }
+} else if (gamePhase === GamePhase.LOBBY) {
+  setDisplayText("LOBBY");
+} else if (gamePhase === GamePhase.FINISHED) {
+  setDisplayText("GAME FINISHED");
+}
+```
+
+#### Screen-Space UI
+
+For DOM-based UI elements:
+
+```typescript
+<div
+  className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50"
+  onClick={handleBackgroundClick}
+>
+  <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Welcome to Cube World
+    </h2>
+    <p className="text-gray-300 mb-6">Enter your name to begin</p>
+
+    {/* Form elements */}
+  </div>
+</div>
+```
+
+#### Keyboard Controls
+
+Handle keyboard shortcuts consistently:
+
+```typescript
+// Use the useKeyPress hook for keyboard commands
+const isControlLeftPressed = useKeyPress("ControlLeft");
+const isControlRightPressed = useKeyPress("ControlRight");
+const isControlPressed = isControlLeftPressed || isControlRightPressed;
+
+// Implement global key event listeners when necessary
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.code === "Enter") {
+      // Handle Enter key
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, [/* dependencies */]);
+```
+
+#### UI Style Guide
+
+Follow these styling patterns:
+
+1. **Buttons**
+```tsx
+<button
+  type="submit"
+  disabled={!name.trim()}
+  className={`w-full py-2 px-4 rounded font-medium flex items-center justify-center gap-4 ${
+    name.trim()
+      ? "bg-blue-600 hover:bg-blue-700 text-white"
+      : "bg-gray-600 text-gray-400 cursor-not-allowed"
+  }`}
+>
+  Join Game{" "}
+  <code className="text-xs p-1 bg-gray-700 rounded">Enter</code>
+</button>
+```
+
+2. **Input Fields**
+```tsx
+<input
+  type="text"
+  id="playerName"
+  ref={inputRef}
+  value={name}
+  onChange={(e) => setName(e.target.value)}
+  className="w-full px-4 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+  placeholder="Enter your name"
+  autoFocus
+  maxLength={20}
+  required
+/>
+```
+
+3. **Modal Containers**
+```tsx
+<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+  <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+    {/* Modal content */}
+  </div>
+</div>
+```
+
+### Troubleshooting
+
+If UI components aren't displaying correctly:
+
+1. Check component visibility logic (isVisible state or conditions)
+2. Verify that game state is being correctly passed to UI components
+3. Test keyboard event handlers with different browser configurations
+4. Ensure that 3D text is positioned correctly in the scene
+5. Test UI with different screen sizes and orientations
+6. Verify that refs are being properly assigned and used
+
+metadata:
+  priority: medium
+  version: 1.0
+</rule> 
